@@ -176,9 +176,16 @@ var CONC_BY_ROUTE={
 
 var CATS=(function(){var s={},r=[];for(var i=0;i<DRUGS.length;i++){if(!s[DRUGS[i].cat]){s[DRUGS[i].cat]=1;r.push(DRUGS[i].cat);}}return r;})();
 
-var state={screen:"splash",wt:"",age:"",search:"",cat:"All",drug:null,conc:"",concLabel:"",selectedRoute:"",showRefs:false,fbType:"error",fbDrug:"",fbMsg:"",fbSent:false};
+var state={screen:"access",wt:"",age:"",search:"",cat:"All",drug:null,conc:"",concLabel:"",selectedRoute:"",showRefs:false,fbType:"error",fbDrug:"",fbMsg:"",fbSent:false,accessError:false};
 
 function getCR(name,route){return(CONC_BY_ROUTE[name]&&CONC_BY_ROUTE[name][route])||null;}
+function checkAccess(){
+  var inp=document.getElementById('inp-access');
+  var val=inp?inp.value.trim():'';
+  if(val==='SQUH4656'){state.accessError=false;state.screen='splash';render();}
+  else{state.accessError=true;render();}
+}
+
 function getWt(){return parseFloat(state.wt)||0;}
 
 function getRoutes(rs){
@@ -199,12 +206,29 @@ function defaultRoute(rs){var r=getRoutes(rs);for(var i=0;i<r.length;i++){if(r[i
 
 function render(){
   var app=document.getElementById('app');
-  if(state.screen==='splash') app.innerHTML=splashHTML();
+  if(state.screen==='access') app.innerHTML=accessHTML();
+  else if(state.screen==='splash') app.innerHTML=splashHTML();
   else if(state.screen==='disclaimer') app.innerHTML=discHTML();
   else if(state.screen==='home') app.innerHTML=homeHTML();
   else if(state.screen==='result') app.innerHTML=resultHTML();
   else if(state.screen==='feedback') app.innerHTML=feedbackHTML();
   bindEvents();
+}
+
+function accessHTML(){
+  return '<div style="min-height:100vh;background:linear-gradient(160deg,#0a3d6b 0%,#185FA5 55%,#1D9E75 100%);display:flex;align-items:center;justify-content:center;padding:2rem">'+
+  '<div style="background:#fff;border-radius:20px;padding:2rem;max-width:360px;width:100%;text-align:center">'+
+  '<div style="width:60px;height:60px;background:#E6F1FB;border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem">'+
+  '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'+
+  '</div>'+
+  '<h2 style="font-size:18px;font-weight:700;margin-bottom:6px">PedsCalc</h2>'+
+  '<p style="font-size:13px;color:#888;margin-bottom:1.5rem;line-height:1.6">This tool is designed for healthcare professionals at <strong>Sultan Qaboos University Hospital</strong> as a clinical guide only.<br><br>It should not replace official formularies or clinical judgment. Always verify doses against supported and official clinical sources.</p>'+
+  '<label style="display:block;font-size:12px;color:#888;margin-bottom:6px;text-align:left">Enter access code</label>'+
+  '<input type="password" id="inp-access" placeholder="Enter code" style="width:100%;padding:11px 14px;border:1.5px solid '+(state.accessError?'#e24b4b':'#e5e5e5')+';border-radius:10px;font-size:16px;font-family:inherit;background:#fff;color:#1a1a1a;outline:none;letter-spacing:3px;text-align:center;margin-bottom:'+(state.accessError?'6px':'1rem')+'"/>'+
+  (state.accessError?'<p style="font-size:12px;color:#e24b4b;margin-bottom:1rem">Incorrect code. Please try again.</p>':'')+
+  '<button id="btn-access" style="width:100%;padding:13px;font-size:15px;font-weight:700;background:#185FA5;color:#fff;border:none;border-radius:12px;cursor:pointer;font-family:inherit;margin-bottom:1rem">Continue</button>'+
+  '<p style="font-size:11px;color:#ccc">&#169; Saeed Al Rassadi, April 2026</p>'+
+  '</div></div>';
 }
 
 function splashHTML(){
@@ -470,9 +494,15 @@ function feedbackHTML(){
 function bindEvents(){
   var s=state.screen;
   var el;
-  if(s==='splash'){
+  if(s==='access'){
+    var inp=document.getElementById('inp-access');
+    var btn=document.getElementById('btn-access');
+    if(inp) inp.addEventListener('keydown',function(e){if(e.key==='Enter'){checkAccess();}});
+    if(btn) btn.addEventListener('click',function(){checkAccess();});
+  } else if(s==='splash'){
     el=document.getElementById('btn-start');
-    if(el) el.addEventListener('click',function(){state.screen='disclaimer';render();});
+    if(el) el.addEventListener('click',function(){state.screen='disclaimer';render();
+window.onerror=function(msg,src,line,col){document.getElementById('app').innerHTML='<div style="padding:2rem;font-family:monospace;font-size:13px;color:#c00"><strong>Error on line '+line+':</strong><br>'+msg+'</div>';return true;};});
   } else if(s==='disclaimer'){
     el=document.getElementById('btn-disc');
     if(el) el.addEventListener('click',function(){state.screen='home';render();});
