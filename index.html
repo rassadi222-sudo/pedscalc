@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PedsCalc · Saeed Al Rassadi</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4f8;color:#1a1a1a;min-height:100vh}
+#app{min-height:100vh}
+.splash{min-height:100vh;background:linear-gradient(160deg,#0a3d6b 0%,#185FA5 55%,#1D9E75 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;position:relative;overflow:hidden}
+.ring{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,0.08);pointer-events:none}
+.logo{width:80px;height:80px;background:rgba(255,255,255,0.15);border-radius:24px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;border:1px solid rgba(255,255,255,0.2)}
+.splash h1{font-size:30px;font-weight:700;color:#fff;margin-bottom:6px}
+.splash p{color:rgba(255,255,255,0.65);font-size:14px;margin-bottom:4px;line-height:1.7}
+.splash-btn{background:#fff;color:#185FA5;border:none;border-radius:14px;padding:14px 44px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:2rem}
+.splash-ver{position:absolute;bottom:1.5rem;display:flex;flex-direction:column;align-items:center;gap:4px}
+.disc-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f0f4f8;padding:1.5rem}
+.disc-card{background:#fff;border-radius:20px;padding:2rem;max-width:440px;width:100%}
+.disc-icon{width:52px;height:52px;background:#E6F1FB;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem}
+.disc-card h2{font-size:18px;font-weight:700;margin-bottom:.75rem}
+.disc-card p{font-size:13px;color:#666;line-height:1.75;margin-bottom:.75rem}
+.disc-btn{width:100%;padding:13px;font-size:15px;font-weight:700;background:#185FA5;color:#fff;border:none;border-radius:12px;cursor:pointer;font-family:inherit;margin-top:.5rem}
+.wrap{max-width:580px;margin:0 auto;padding:0 1rem}
+.pull{margin-top:-12px}
+.card{background:#fff;border-radius:16px;padding:1rem 1.25rem;margin-bottom:.85rem}
+.card-label{font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.65rem}
+label{display:block;font-size:12px;color:#888;margin-bottom:5px}
+input,select,textarea{width:100%;padding:9px 12px;border:1px solid #e5e5e5;border-radius:10px;font-size:14px;font-family:inherit;background:#fff;color:#1a1a1a;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#185FA5}
+textarea{resize:vertical}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#eee;border-radius:12px;overflow:hidden;margin-bottom:.85rem}
+.stat{background:#fff;padding:.65rem .5rem;text-align:center}
+.stat-n{font-size:18px;font-weight:700;color:#185FA5}
+.stat-l{font-size:10px;color:#aaa;font-weight:500}
+.search-wrap{position:relative}
+.search-wrap input{padding-left:36px;background:#f7f9fc}
+.s-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none}
+.cat-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:.65rem}
+.cpill{font-size:11px;padding:4px 11px;border-radius:20px;cursor:pointer;border:1px solid #e5e5e5;background:#fff;color:#888;font-family:inherit;font-weight:500}
+.drug-list{background:#fff;border-radius:16px;overflow:hidden;margin-bottom:.85rem}
+.drow{padding:.75rem 1rem;cursor:pointer;border-bottom:1px solid #f5f5f5;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.drow:last-child{border-bottom:none}
+.drow:hover{background:#f7f9fc}
+.dname{font-size:14px;font-weight:600;color:#1a1a1a}
+.dsub{font-size:11px;color:#aaa;margin-top:2px}
+.pill{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.fbstrip{background:#fff;border-radius:16px;padding:.85rem 1rem;text-align:center;margin-bottom:.85rem}
+.icell{background:#f5f5f5;border-radius:10px;padding:8px 12px}
+.icell-l{font-size:10px;color:#aaa;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.icell-v{font-size:13px;font-weight:600;color:#1a1a1a}
+.metric{border-radius:12px;padding:.85rem 1rem;background:#f5f5f5}
+.metric-l{font-size:11px;color:#888;margin-bottom:4px;font-weight:500}
+.metric-v{font-size:26px;font-weight:700;line-height:1;color:#1a1a1a}
+.metric-u{font-size:13px;font-weight:400;color:#aaa;margin-left:3px}
+.mblue{background:linear-gradient(135deg,#E6F1FB,#d0e8f7)}
+.mblue .metric-l{color:#185FA5}
+.mblue .metric-v{color:#0C447C}
+.mblue .metric-u{color:#378ADD}
+.warn{background:#fff8e6;border-left:3px solid #f0c040;border-radius:0 10px 10px 0;padding:.65rem 1rem;font-size:13px;color:#7a5500;margin-bottom:.75rem;line-height:1.6}
+.err{background:#fff0f0;border-left:3px solid #e24b4b;border-radius:0 10px 10px 0;padding:.65rem 1rem;font-size:13px;color:#8b1a1a;margin-bottom:.75rem}
+.ftrace{background:#f5f5f5;border-radius:10px;padding:.6rem 1rem;font-size:12px;color:#aaa;margin-bottom:.75rem;font-family:monospace}
+.ref-block{border-bottom:1px solid #f0f0f0;padding:8px 0}
+.ref-block:last-child{border-bottom:none}
+.ref-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px}
+.ref-k{font-size:12px;font-weight:700;color:#185FA5}
+.ref-dose{font-size:13px;font-weight:600;color:#1a1a1a}
+.ref-note{font-size:12px;color:#888;line-height:1.5}
+.ref-btn{font-size:12px;color:#bbb;background:none;border:none;cursor:pointer;font-family:inherit;padding:0}
+.footer{font-size:11px;color:#ccc;text-align:center;padding:.75rem 0 1.5rem}
+.remark{background:#EBF5FF;border-left:3px solid #185FA5;border-radius:0 12px 12px 0;padding:.85rem 1rem;margin-bottom:.75rem}
+.remark-lbl{font-size:10px;font-weight:700;color:#185FA5;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.remark-text{font-size:15px;font-weight:600;color:#0C447C;line-height:1.7}
+.route-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.85rem}
+.rtab{font-size:12px;font-weight:600;padding:7px 16px;border-radius:20px;cursor:pointer;border:1.5px solid #e5e5e5;background:#fff;color:#888;font-family:inherit}
+.rtab.active{background:#185FA5;color:#fff;border-color:#185FA5}
+.fb-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.85rem}
+.fbtb{padding:10px 8px;border-radius:12px;border:1.5px solid #e5e5e5;background:#fff;font-size:12px;font-weight:600;color:#888;cursor:pointer;font-family:inherit;text-align:center;line-height:1.4}
+.fbtb.active{border-color:#185FA5;background:#E6F1FB;color:#0C447C}
+.send-btn{width:100%;padding:13px;font-size:15px;font-weight:700;background:#185FA5;color:#fff;border:none;border-radius:12px;cursor:pointer;font-family:inherit;margin-bottom:.85rem}
+@media(prefers-color-scheme:dark){
+  body,#app{background:#111;color:#e5e5e5}
+  h1,h2{color:#e5e5e5}
+  .card,.drug-list,.disc-card,.fbstrip,.stat{background:#1c1c1e}
+  .stats{background:#2a2a2a}
+  input,select,textarea{background:#2a2a2a;border-color:#3a3a3a;color:#e5e5e5}
+  input::placeholder,textarea::placeholder{color:#666}
+  .drow{border-color:#2a2a2a;background:#1c1c1e}
+  .drow:hover{background:#252525}
+  .dname{color:#e5e5e5}
+  .dsub{color:#666}
+  .metric,.icell,.ftrace{background:#2a2a2a}
+  .icell-v,.metric-v{color:#e5e5e5}
+  .search-wrap input{background:#2a2a2a}
+  .cpill{background:#1c1c1e;border-color:#3a3a3a;color:#888}
+  .ref-block{border-color:#2a2a2a}
+  .ref-dose{color:#e5e5e5}
+  .ref-note{color:#666}
+  .card-label,.stat-l{color:#555}
+  label{color:#666}
+  .disc-card p{color:#aaa}
+  .disc-card h2,.dname{color:#e5e5e5}
+  .disc-icon{background:#1a2a3a}
+  .fbstrip{background:#1c1c1e}
+  .footer{color:#444}
+  .warn{background:#2a2200;border-color:#7a6000;color:#e5c040}
+  .err{background:#2a0000;border-color:#7a2020;color:#f09090}
+  .ftrace{color:#555}
+  .ref-btn{color:#555}
+  .remark{background:#1a2a3a;border-color:#378ADD}
+  .remark-lbl{color:#64B5F6}
+  .remark-text{color:#90CAF9}
+  .rtab{background:#1c1c1e;border-color:#3a3a3a;color:#888}
+  .rtab.active{background:#185FA5;color:#fff;border-color:#185FA5}
+  .fbtb{background:#1c1c1e;border-color:#3a3a3a;color:#888}
+  .fbtb.active{background:#1a2a3a;border-color:#185FA5;color:#90CAF9}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+var DRUGS=[
+{name:"Paracetamol",generic:"Acetaminophen",cat:"Analgesics & Antipyretics",lo:10,hi:15,max:1000,freq:"Every 4-6h (max 5 doses/24h)",route:"PO / PR / IV",conc:24,concL:"120 mg/5 mL syrup",refs:{BNFC:{dose:"15 mg/kg/dose",note:"First-line antipyretic from 2 months; IV reserved for hospital use."},HLL:{dose:"10-15 mg/kg/dose",note:"Safe across all ages; widely used for fever and mild-moderate pain."},Taketomo:{dose:"10-15 mg/kg/dose",note:"Hepatotoxicity risk with overdose; avoid in hepatic impairment."},UpToDate:{dose:"10-15 mg/kg/dose every 4-6h (max 5 doses/day)",note:"Max 75 mg/kg/day; IV use reserved for those unable to take oral or rectal."}},note:"All four references agree. Max daily 4 g. Avoid in hepatic impairment."},
+{name:"Ibuprofen",generic:"",cat:"Analgesics & Antipyretics",lo:5,hi:10,max:400,freq:"Every 6-8h",route:"PO",conc:20,concL:"100 mg/5 mL",refs:{BNFC:{dose:"5-10 mg/kg/dose",note:"Avoid under 3 months or weight less than 5 kg."},HLL:{dose:"5-10 mg/kg/dose",note:"Contraindicated in dehydration, renal impairment, or GI bleeding."},Taketomo:{dose:"4-10 mg/kg/dose",note:"Lower dose for analgesia; higher for anti-inflammatory effect."},UpToDate:{dose:"4-10 mg/kg/dose every 6-8h",note:"Advises adequate hydration; avoid in children under 3 months or under 5 kg."}},note:"Avoid in less than 3 months, renal impairment, dehydration. Max 2.4 g/day."},
+{name:"Morphine",generic:"",cat:"Analgesics & Antipyretics",lo:0.1,hi:0.2,max:10,freq:"Every 3-4h (titrate)",route:"IV / IM / SC",conc:10,concL:"10 mg/mL",refs:{BNFC:{dose:"0.1-0.2 mg/kg/dose",note:"Reduce dose in renal or hepatic impairment; titrate to effect."},HLL:{dose:"0.1-0.2 mg/kg/dose",note:"Monitor respiratory rate closely; opioid of choice for severe pain."},Taketomo:{dose:"0.1-0.2 mg/kg/dose",note:"Reduced clearance in neonates; risk of accumulation."},UpToDate:{dose:"0.1-0.2 mg/kg/dose IV every 3-4h",note:"Recommends reduced dosing in neonates under 1 month and infants; titrate to effect."}},note:"Full consensus. Caution in neonates and children under 1 year."},
+{name:"Amoxicillin",generic:"",cat:"Antibiotics",lo:15,hi:30,max:500,freq:"Every 8h (TDS)",route:"PO",conc:50,concL:"250 mg/5 mL",refs:{BNFC:{dose:"20-40 mg/kg/day divided every 8h",note:"Standard for mild infections; high-dose for AOM and pneumonia."},HLL:{dose:"25-45 mg/kg/day divided every 8h",note:"Higher range for resistant S. pneumoniae."},Taketomo:{dose:"25-45 mg/kg/day divided every 8h",note:"Per-dose 15-30 mg/kg every 8h."},UpToDate:{dose:"25-45 mg/kg/day divided every 8h; 80-90 mg/kg/day for AOM",note:"High-dose recommended in areas with penicillin-resistant S. pneumoniae."}},note:"Per-dose 15-30 mg/kg every 8h. High-dose 80-90 mg/kg/day for AOM/pneumonia."},
+{name:"Amoxicillin-Clavulanate",generic:"Co-amoxiclav",cat:"Antibiotics",lo:15,hi:30,max:500,freq:"Every 12h (BD)",route:"PO",conc:80,concL:"457 mg/5 mL (amox 80 mg/mL)",refs:{BNFC:{dose:"25 mg/kg/day divided every 12h (amox component)",note:"BD dosing preferred to reduce GI side effects."},HLL:{dose:"25-45 mg/kg/day divided every 12h",note:"Useful for beta-lactamase-producing organisms."},Taketomo:{dose:"25-45 mg/kg/day divided every 12h",note:"457 suspension gives 80 mg/mL amoxicillin component."},UpToDate:{dose:"25-45 mg/kg/day (amox component) divided every 12h",note:"BD dosing preferred over TDS to reduce GI side effects."}},note:"Dose and volume based on amoxicillin component (80 mg/mL in 457 suspension)."},
+{name:"Cephalexin",generic:"Cefalexin",cat:"Antibiotics",lo:12.5,hi:25,max:500,freq:"Every 6h",route:"PO",conc:50,concL:"250 mg/5 mL",refs:{BNFC:{dose:"12.5 mg/kg every 6h",note:"Good activity against skin, soft tissue, and UTI."},HLL:{dose:"25-50 mg/kg/day divided every 6h",note:"Higher range for more severe infections; well-absorbed with food."},Taketomo:{dose:"25-50 mg/kg/day divided every 6h",note:"Suitable step-down from IV cefazolin."},UpToDate:{dose:"25-50 mg/kg/day divided every 6h (max 4 g/day)",note:"First-line for uncomplicated skin infections and UTI."}},note:"First-line for skin infections and UTI. Max 4 g/day."},
+{name:"Ceftriaxone",generic:"",cat:"Antibiotics",lo:50,hi:100,max:2000,freq:"Once daily",route:"IV / IM",conc:100,concL:"250 mg/2.5 mL",refs:{BNFC:{dose:"50-100 mg/kg once daily",note:"50 mg/kg standard; 100 mg/kg for meningitis. Max 4 g/day."},HLL:{dose:"50-100 mg/kg/day",note:"Avoid concurrent calcium-containing IV solutions."},Taketomo:{dose:"50-100 mg/kg/day",note:"Do not use in neonates with hyperbilirubinaemia."},UpToDate:{dose:"50-100 mg/kg/day once daily or divided every 12h (max 4 g/day)",note:"Strong warning against use in neonates with jaundice; avoid with calcium IV solutions."}},note:"Avoid in neonates with jaundice or calcium-containing IV fluids. Max 4 g/day."},
+{name:"Cefotaxime",generic:"",cat:"Antibiotics",lo:50,hi:100,max:2000,freq:"Every 6-8h",route:"IV",conc:100,concL:"500 mg/5 mL",refs:{BNFC:{dose:"50 mg/kg every 6-8h",note:"Preferred in neonates; no bilirubin displacement risk."},HLL:{dose:"100-200 mg/kg/day divided every 6-8h",note:"Higher doses for meningitis and severe sepsis."},Taketomo:{dose:"100-200 mg/kg/day divided every 6h",note:"Broad gram-negative coverage; safe in neonates."},UpToDate:{dose:"100-200 mg/kg/day divided every 6-8h (max 12 g/day)",note:"Preferred third-generation cephalosporin in neonates."}},note:"Preferred over ceftriaxone in neonates. Max 12 g/day."},
+{name:"Azithromycin",generic:"",cat:"Antibiotics",lo:10,hi:10,max:500,freq:"Days 2-5: 5 mg/kg",route:"PO",conc:40,concL:"200 mg/5 mL",refs:{BNFC:{dose:"10 mg/kg once daily x3 days",note:"3-day course for community-acquired pneumonia."},HLL:{dose:"10 mg/kg day 1; 5 mg/kg days 2-5",note:"5-day course preferred in US."},Taketomo:{dose:"10 mg/kg day 1; 5 mg/kg days 2-5",note:"Long tissue half-life; avoid in QT prolongation."},UpToDate:{dose:"10 mg/kg day 1 (max 500 mg); 5 mg/kg days 2-5 (max 250 mg)",note:"5-day course recommended; screen for QT prolongation risk before prescribing."}},note:"BNFC 3-day; HLL/Taketomo/UpToDate 5-day. Follow local guidance."},
+{name:"Erythromycin",generic:"",cat:"Antibiotics",lo:12.5,hi:12.5,max:500,freq:"Every 6h",route:"PO",conc:25,concL:"125 mg/5 mL",refs:{BNFC:{dose:"12.5 mg/kg every 6h (max 500 mg/dose)",note:"Alternative to amoxicillin in penicillin allergy."},HLL:{dose:"30-50 mg/kg/day divided every 6h",note:"Widely used for atypical pneumonia and pertussis."},Taketomo:{dose:"30-50 mg/kg/day divided every 6h",note:"Low-dose 3 mg/kg for gastroparesis; multiple CYP3A4 interactions."},UpToDate:{dose:"30-50 mg/kg/day divided every 6-8h (max 4 g/day)",note:"Multiple drug interactions via CYP3A4; low-dose used as prokinetic."}},note:"Alternative in penicillin allergy. Low dose used for prokinetic effect."},
+{name:"Co-trimoxazole",generic:"Trimethoprim/Sulfamethoxazole",cat:"Antibiotics",lo:4,hi:6,max:160,freq:"Every 12h",route:"PO",conc:8,concL:"TMP 40/SMX 200 mg per 5 mL",refs:{BNFC:{dose:"4 mg/kg TMP every 12h (max 160 mg TMP/dose)",note:"Avoid in neonates and severe renal impairment."},HLL:{dose:"4-6 mg/kg TMP every 12h",note:"First-line for UTI and PCP prophylaxis."},Taketomo:{dose:"4-6 mg/kg TMP every 12h",note:"Avoid in G6PD deficiency; risk of Stevens-Johnson syndrome."},UpToDate:{dose:"8/40 mg/kg/day (TMP/SMX) divided every 12h",note:"First-line for uncomplicated UTI; monitor for hyperkalaemia in renal impairment."}},note:"Dose as trimethoprim component. Avoid in neonates, severe renal impairment, G6PD deficiency."},
+{name:"Gentamicin",generic:"",cat:"Antibiotics",lo:5,hi:7.5,max:300,freq:"Once daily",route:"IV / IM",conc:10,concL:"10 mg/mL",refs:{BNFC:{dose:"7 mg/kg once daily",note:"Extended-interval dosing; TDM essential."},HLL:{dose:"5-7.5 mg/kg once daily",note:"Once-daily dosing reduces nephrotoxicity."},Taketomo:{dose:"5-7.5 mg/kg once daily",note:"Neonatal doses differ - consult neonatal formulary."},UpToDate:{dose:"5-7.5 mg/kg/dose once daily (extended interval)",note:"Strongly recommends extended-interval dosing; AUC/MIC ratio is key target."}},note:"TDM mandatory. Doses differ significantly for neonates."},
+{name:"Metronidazole",generic:"",cat:"Antibiotics",lo:7.5,hi:10,max:400,freq:"Every 8h",route:"PO / IV",conc:5,concL:"5 mg/mL (IV bag)",refs:{BNFC:{dose:"7.5 mg/kg every 8h (max 400 mg)",note:"Used for anaerobic infections, C. diff, and H. pylori."},HLL:{dose:"15-35 mg/kg/day divided every 8h",note:"IV and oral bioavailability similar at approximately 100%."},Taketomo:{dose:"15-35 mg/kg/day divided every 8h",note:"Avoid alcohol during and 48h after treatment."},UpToDate:{dose:"15-35 mg/kg/day divided every 8h (max 4 g/day)",note:"Oral bioavailability approximately 100%; switch to oral as soon as clinically feasible."}},note:"BNFC per-dose aligns with 22.5-30 mg/kg/day range."},
+{name:"Vancomycin",generic:"",cat:"Antibiotics",lo:15,hi:15,max:750,freq:"Every 6h (TDM)",route:"IV",conc:10,concL:"500 mg/50 mL",refs:{BNFC:{dose:"15 mg/kg every 6h",note:"Monitor trough levels; target 10-20 mg/L."},HLL:{dose:"40-60 mg/kg/day divided every 6h",note:"AUC-guided dosing increasingly preferred."},Taketomo:{dose:"40-60 mg/kg/day divided every 6h",note:"Infuse over 60 min minimum to avoid red man syndrome."},UpToDate:{dose:"40-60 mg/kg/day divided every 6h; AUC-guided TDM",note:"Endorses AUC/MIC-guided TDM; target AUC 400-600 mg·h/L."}},note:"TDM required. Infuse over 60 min minimum."},
+{name:"Cloxacillin",generic:"",cat:"Antibiotics",lo:25,hi:50,max:1000,freq:"Every 6h",route:"PO / IV",conc:50,concL:"250 mg/5 mL",refs:{BNFC:{dose:"12.5-25 mg/kg every 6h mild; 50 mg/kg severe",note:"Drug of choice for MSSA; higher IV dose for osteomyelitis."},HLL:{dose:"50-100 mg/kg/day divided every 6h",note:"Oral form on empty stomach for optimal absorption."},Taketomo:{dose:"50-100 mg/kg/day divided every 6h",note:"Not active against MRSA; confirm sensitivity."},UpToDate:{dose:"50-100 mg/kg/day divided every 6h",note:"Drug of choice for MSSA; ineffective against MRSA."}},note:"Fasting improves oral absorption."},
+{name:"Epinephrine",generic:"Adrenaline - Anaphylaxis",cat:"Emergency",lo:0.01,hi:0.01,max:0.5,freq:"Repeat every 5-15 min PRN",route:"IM",conc:1,concL:"1 mg/mL (1:1000)",refs:{BNFC:{dose:"0.01 mg/kg IM (max 0.5 mg)",note:"Anterolateral thigh preferred; auto-injector if available."},HLL:{dose:"0.01 mg/kg IM (max 0.3-0.5 mg)",note:"IM absorption faster than SC; repeat every 5-15 min."},Taketomo:{dose:"0.01 mg/kg IM (max 0.5 mg)",note:"1:1000 for IM use only; 1:10,000 for IV cardiac arrest."},UpToDate:{dose:"0.01 mg/kg IM (max 0.5 mg)",note:"Full consensus; IM anterolateral thigh is the only first-line route - never SC."}},note:"Give IM NOT SC. BNFC/Taketomo cap 0.5 mg; HLL 0.3 mg."},
+{name:"Atropine",generic:"Bradycardia",cat:"Emergency",lo:0.02,hi:0.02,max:0.5,freq:"Repeat every 5 min (max 3x)",route:"IV",conc:0.6,concL:"0.6 mg/mL",refs:{BNFC:{dose:"0.02 mg/kg IV min 0.1 mg max 0.6 mg",note:"Minimum 0.1 mg prevents paradoxical bradycardia."},HLL:{dose:"0.02 mg/kg IV min 0.1 mg max 0.5 mg",note:"Can be given via endotracheal tube in arrest."},Taketomo:{dose:"0.02 mg/kg IV min 0.1 mg max 0.5 mg",note:"Not effective for hypothermic bradycardia."},UpToDate:{dose:"0.02 mg/kg IV (min 0.1 mg; max 0.5 mg)",note:"Minimum 0.1 mg critical to prevent paradoxical bradycardia."}},note:"Min 0.1 mg to avoid paradoxical bradycardia."},
+{name:"Adenosine",generic:"SVT",cat:"Emergency",lo:0.1,hi:0.3,max:12,freq:"Rapid IV push; repeat q1-2 min",route:"IV",conc:3,concL:"3 mg/mL",refs:{BNFC:{dose:"100 mcg/kg; max 500 mcg/kg or 12 mg",note:"Fast bolus + NS flush; use large proximal vein."},HLL:{dose:"0.1 mg/kg; max 0.3 mg/kg or 12 mg",note:"Transient AV block expected; ECG monitoring essential."},Taketomo:{dose:"0.1 mg/kg; max 0.3 mg/kg or 12 mg",note:"Half-life under 10 seconds; warn patient of chest tightness."},UpToDate:{dose:"0.1 mg/kg rapid IV push; increase by 0.1 mg/kg every 1-2 min; max 12 mg",note:"Large-bore IV and rapid NS flush essential; brief but intense side effects."}},note:"Rapid bolus + NS flush. Continuous ECG monitoring."},
+{name:"Dextrose 10%",generic:"Hypoglycaemia",cat:"Emergency",lo:2,hi:5,max:200,freq:"Once, recheck glucose",route:"IV",conc:100,concL:"100 mg/mL (10%)",refs:{BNFC:{dose:"2 mL/kg of 10% glucose IV",note:"10% preferred; safer and less venotoxic than 25-50%."},HLL:{dose:"0.5-1 g/kg IV",note:"Recheck glucose 15-20 min after bolus."},Taketomo:{dose:"0.5-1 g/kg IV",note:"D10% safer in neonates and infants."},UpToDate:{dose:"0.5-1 g/kg (5-10 mL/kg of 10%) IV",note:"Prefers 10% in infants and young children; recheck glucose 15 min after bolus."}},note:"BNFC recommends 10% (safer). Use 10% in neonates."},
+{name:"Salbutamol",generic:"Albuterol - Nebulized",cat:"Respiratory",lo:0.15,hi:0.15,max:5,freq:"Every 20 min x3, then every 4h",route:"Nebulized",conc:1,concL:"1 mg/mL",refs:{BNFC:{dose:"2.5 mg under 5yr; 2.5-5 mg 5yr and over (fixed by age)",note:"Fixed dosing by age; continuous nebulisation in severe asthma."},HLL:{dose:"0.15 mg/kg (min 2.5 mg)",note:"Monitor for tachycardia and tremor."},Taketomo:{dose:"0.15 mg/kg (min 2.5 mg; max 5 mg)",note:"IV salbutamol reserved for severe unresponsive cases."},UpToDate:{dose:"0.15 mg/kg/dose (min 2.5 mg; max 5 mg) every 20 min x3",note:"Weight-based dosing; continuous nebulisation may be considered in severe cases."}},note:"BNFC fixed by age. HLL/Taketomo/UpToDate weight-based with min 2.5 mg."},
+{name:"Dexamethasone",generic:"Croup",cat:"Respiratory",lo:0.15,hi:0.6,max:10,freq:"Single dose (may repeat at 24h)",route:"PO / IM / IV",conc:0.4,concL:"2 mg/5 mL oral solution (0.4 mg/mL)",refs:{BNFC:{dose:"0.15 mg/kg single dose",note:"Evidence-based lower dose for mild-moderate croup."},HLL:{dose:"0.15-0.6 mg/kg",note:"0.6 mg/kg for moderate-severe; onset within 30-60 min."},Taketomo:{dose:"0.6 mg/kg; max 10 mg",note:"0.6 mg/kg is the most studied regimen."},UpToDate:{dose:"0.6 mg/kg single dose (max 16 mg)",note:"Recommends 0.6 mg/kg as standard for moderate-severe croup."}},note:"BNFC 0.15 mg/kg mild croup. Taketomo/UpToDate 0.6 mg/kg moderate-severe. Oral solution: 2 mg/5 mL (0.4 mg/mL). IV/IM injection: 4 mg/mL - select route tab to switch concentration."},
+{name:"Prednisolone",generic:"",cat:"Respiratory",lo:1,hi:2,max:40,freq:"Once daily x3-5 days",route:"PO",conc:5,concL:"5 mg/mL",refs:{BNFC:{dose:"1-2 mg/kg/day (max 40 mg)",note:"3-day course sufficient for most exacerbations."},HLL:{dose:"1-2 mg/kg/day (max 60 mg)",note:"Bioequivalent to IV methylprednisolone in most cases."},Taketomo:{dose:"1-2 mg/kg/day (max 40-60 mg)",note:"Taper not required for courses under 7 days."},UpToDate:{dose:"1-2 mg/kg/day (max 40-60 mg) x3-5 days",note:"Short courses do not require tapering; bioequivalent to IV methylprednisolone."}},note:"BNFC caps at 40 mg; HLL/UpToDate allow up to 60 mg."},
+{name:"Ipratropium",generic:"Nebulized",cat:"Respiratory",lo:0.25,hi:0.5,max:0.5,freq:"Every 20 min x3 (acute only)",route:"Nebulized",conc:0.25,concL:"0.25 mg/mL",refs:{BNFC:{dose:"250 mcg under 5yr; 500 mcg 5yr and over",note:"Fixed age-based dosing in acute severe asthma."},HLL:{dose:"0.25-0.5 mg every 20 min x3",note:"Additive benefit in first hour; not for maintenance."},Taketomo:{dose:"0.25-0.5 mg every 20 min",note:"Minimal systemic absorption reduces side effects."},UpToDate:{dose:"250 mcg under 20 kg; 500 mcg 20 kg and over every 20 min x3",note:"Benefit seen only in first hour of acute asthma; weight-based fixed dosing preferred."}},note:"Combine with salbutamol for severe asthma."},
+{name:"Diazepam",generic:"Rectal - Seizures",cat:"Seizures / CNS",lo:0.3,hi:0.5,max:10,freq:"Once; repeat x1 after 10 min",route:"PR",conc:2,concL:"2 mg/mL rectal",refs:{BNFC:{dose:"0.5 mg/kg PR",note:"Rectal route when IV unavailable; max 10 mg."},HLL:{dose:"0.3-0.5 mg/kg PR (max 20 mg)",note:"Useful for out-of-hospital management."},Taketomo:{dose:"0.5 mg/kg PR (max 20 mg)",note:"Onset 2-10 min rectally; monitor for respiratory depression."},UpToDate:{dose:"0.3-0.5 mg/kg PR (max 20 mg)",note:"Rectal diazepam for out-of-hospital seizures; respiratory monitoring essential."}},note:"BNFC/Taketomo 0.5 mg/kg. Max capped at 10 mg per UK practice."},
+{name:"Lorazepam",generic:"Status Epilepticus",cat:"Seizures / CNS",lo:0.05,hi:0.1,max:4,freq:"Once; repeat x1 after 10 min",route:"IV",conc:2,concL:"2 mg/mL",refs:{BNFC:{dose:"0.1 mg/kg IV (max 4 mg)",note:"First-line IV benzodiazepine for status epilepticus."},HLL:{dose:"0.05-0.1 mg/kg IV (max 4 mg)",note:"Preferred over diazepam IV; longer duration."},Taketomo:{dose:"0.05-0.1 mg/kg IV",note:"Intranasal route 0.1 mg/kg as alternative."},UpToDate:{dose:"0.05-0.1 mg/kg IV (max 4 mg); repeat once if needed",note:"Preferred first-line IV benzodiazepine for status epilepticus."}},note:"Preferred IV benzodiazepine for status epilepticus."},
+{name:"Midazolam",generic:"Buccal / IV - Seizures",cat:"Seizures / CNS",lo:0.1,hi:0.3,max:10,freq:"Once; may repeat x1",route:"Buccal / IN / IV",conc:5,concL:"5 mg/mL",refs:{BNFC:{dose:"Buccal: 0.3 mg/kg (max 10 mg); IV: 0.1-0.2 mg/kg",note:"Buccal first-line for out-of-hospital seizures."},HLL:{dose:"IV: 0.05-0.15 mg/kg; IN: 0.2 mg/kg",note:"Intranasal route has rapid onset; use atomiser device."},Taketomo:{dose:"IV: 0.05-0.15 mg/kg; Buccal: 0.2-0.3 mg/kg",note:"IV dose lower than buccal/IN."},UpToDate:{dose:"Buccal/IN: 0.2-0.3 mg/kg; IV: 0.05-0.1 mg/kg",note:"Buccal midazolam considered equivalent to rectal diazepam for out-of-hospital seizures."}},note:"Buccal/IN first-line out-of-hospital. IV dose lower than buccal."},
+{name:"Phenobarbital",generic:"Loading dose",cat:"Seizures / CNS",lo:15,hi:20,max:1000,freq:"Single loading dose",route:"IV",conc:200,concL:"200 mg/mL",refs:{BNFC:{dose:"20 mg/kg IV (max 1 g)",note:"Second-line; infuse slowly to avoid respiratory depression."},HLL:{dose:"15-20 mg/kg IV",note:"Monitor respiratory function; have airway support ready."},Taketomo:{dose:"15-20 mg/kg IV",note:"Max rate 1 mg/kg/min; faster rates risk apnoea."},UpToDate:{dose:"15-20 mg/kg IV loading; max rate 1-2 mg/kg/min",note:"Second-line for status epilepticus; respiratory support must be available."}},note:"Respiratory monitoring mandatory. Max rate 1 mg/kg/min. Infuse over 20-30 min."},
+{name:"Phenytoin",generic:"Loading dose",cat:"Seizures / CNS",lo:15,hi:20,max:1000,freq:"Single loading dose",route:"IV",conc:50,concL:"50 mg/mL",refs:{BNFC:{dose:"20 mg/kg IV (max 2 g)",note:"Continuous ECG and BP monitoring required."},HLL:{dose:"15-20 mg/kg IV (max 1.5 g)",note:"Dilute in NS only; use in-line filter."},Taketomo:{dose:"15-20 mg/kg IV",note:"Fosphenytoin preferred where available."},UpToDate:{dose:"15-20 mg/kg IV; max rate 1 mg/kg/min",note:"Fosphenytoin preferred where available; incompatible with glucose-containing solutions."}},note:"ECG monitoring required. NS only - incompatible with glucose."},
+{name:"Ondansetron",generic:"",cat:"GI",lo:0.1,hi:0.15,max:4,freq:"Every 8h",route:"PO / IV",conc:2,concL:"2 mg/mL injection",refs:{BNFC:{dose:"0.1 mg/kg (max 4 mg) every 12h",note:"Avoid in prolonged QT; every 12h dosing."},HLL:{dose:"0.1-0.15 mg/kg every 8h (max 4 mg)",note:"Effective for chemotherapy-induced and post-op nausea."},Taketomo:{dose:"0.1-0.15 mg/kg every 8h (max 4 mg)",note:"Oral dissolving tablet available."},UpToDate:{dose:"0.1-0.15 mg/kg every 6-8h (max 4 mg/dose)",note:"Avoid in QT-prolonging conditions."}},note:"Avoid prolonged QT. Caution under 2 years."},
+{name:"Domperidone",generic:"",cat:"GI",lo:0.25,hi:0.5,max:10,freq:"Every 8h",route:"PO",conc:1,concL:"1 mg/mL",refs:{BNFC:{dose:"250-500 mcg/kg every 8h (max 10 mg)",note:"Use lowest effective dose for shortest duration."},HLL:{dose:"Not in current editions (not FDA-approved)",note:"Not included in current Harriet Lane formulary."},Taketomo:{dose:"0.25-0.5 mg/kg every 8h",note:"Associated with QT prolongation at higher doses."},UpToDate:{dose:"Not recommended (not FDA-approved; cardiac risk)",note:"UpToDate does not recommend domperidone due to FDA non-approval and cardiac safety concerns."}},note:"Not FDA-approved in US; absent from Harriet Lane and not recommended by UpToDate."},
+{name:"Omeprazole",generic:"",cat:"GI",lo:0.7,hi:1,max:20,freq:"Once daily (30 min before food)",route:"PO",conc:2,concL:"10 mg/5 mL dispersible",refs:{BNFC:{dose:"0.7-1.4 mg/kg once daily (max 20 mg)",note:"Dispersible tablet for children unable to swallow capsules."},HLL:{dose:"0.7-1 mg/kg once daily (max 20 mg)",note:"Onset of effect within 1-2 days."},Taketomo:{dose:"0.7-1.4 mg/kg once daily (max 20 mg)",note:"May need dose increase in rapid metabolisers."},UpToDate:{dose:"0.5-1 mg/kg once daily (max 20 mg if under 20 kg; max 40 mg if over 20 kg)",note:"Preferred PPI in children; administer 30 min before first meal."}},note:"Give 30 min before food. Dispersible tablet available for young children."},
+{name:"Zinc Sulfate",generic:"Diarrhoea adjunct",cat:"GI",lo:0.5,hi:1,max:20,freq:"Once daily x10-14 days",route:"PO",conc:4,concL:"20 mg/5 mL elemental zinc",refs:{BNFC:{dose:"10 mg once daily under 6 months; 20 mg once daily 6 months and over",note:"WHO-recommended adjunct for acute diarrhoea."},HLL:{dose:"10-20 mg once daily based on age",note:"Useful in zinc-deficient or malnourished children."},Taketomo:{dose:"0.5-1 mg/kg/day elemental zinc (max 20 mg)",note:"Continue for full 10-14 days even after diarrhoea resolves."},UpToDate:{dose:"10 mg/day under 6 months; 20 mg/day 6 months and over x10-14 days",note:"WHO and UpToDate agree; reduces duration and severity of diarrhoea."}},note:"WHO recommendation. Use fixed age-based dose: 10 mg under 6 months; 20 mg 6 months and over."},
+{name:"Cetirizine",generic:"",cat:"Antihistamines",lo:0.25,hi:0.25,max:10,freq:"Once daily",route:"PO",conc:1,concL:"5 mg/5 mL",refs:{BNFC:{dose:"2.5 mg (1-2yr); 5 mg (2-6yr); 10 mg (6-12yr) fixed by age",note:"Minimal sedation; once daily dosing."},HLL:{dose:"0.25 mg/kg once daily (max 10 mg) or fixed by age",note:"Preferred for allergic rhinitis."},Taketomo:{dose:"0.25 mg/kg once daily (max 10 mg)",note:"Low CNS penetration reduces sedation."},UpToDate:{dose:"2.5 mg once daily (6-23 months); 2.5-5 mg once daily (2-5yr); 5-10 mg once daily (6yr and over)",note:"Age-based fixed dosing preferred; safe from 6 months."}},note:"BNFC/UpToDate use fixed age-based dosing. Formula gives weight-based approximation."},
+{name:"Loratadine",generic:"",cat:"Antihistamines",lo:0.1,hi:0.2,max:10,freq:"Once daily",route:"PO",conc:1,concL:"5 mg/5 mL",refs:{BNFC:{dose:"5 mg once daily under 30 kg; 10 mg once daily 30 kg and over",note:"Non-sedating; suitable from 2 years."},HLL:{dose:"5 mg once daily under 30 kg; 10 mg once daily 30 kg and over",note:"Well-tolerated with minimal drug interactions."},Taketomo:{dose:"5 mg once daily under 30 kg; 10 mg once daily 30 kg and over",note:"Use fixed dosing in practice."},UpToDate:{dose:"5 mg once daily under 30 kg; 10 mg once daily 30 kg and over",note:"Full consensus; non-sedating and well-tolerated from 2 years."}},note:"Use fixed dosing: 5 mg if under 30 kg, 10 mg if 30 kg and over. Formula gives approximation only."},
+{name:"Chlorphenamine",generic:"Chlorpheniramine",cat:"Antihistamines",lo:0.1,hi:0.1,max:4,freq:"Every 4-6h",route:"PO",conc:0.4,concL:"2 mg/5 mL",refs:{BNFC:{dose:"1 mg every 4-6h (1-6yr); 2 mg every 4-6h (6-12yr) fixed by age",note:"Sedating - useful for pruritus and acute urticaria."},HLL:{dose:"0.35 mg/kg/day divided every 4-6h (max 4 mg/dose)",note:"Sedation may be beneficial in pruritic conditions."},Taketomo:{dose:"0.35 mg/kg/day divided every 4-6h",note:"Anticholinergic side effects more common than newer agents."},UpToDate:{dose:"0.35 mg/kg/day divided every 4-6h (max 4 mg/dose)",note:"Significant sedation and anticholinergic effects; second-generation antihistamines preferred when sedation is undesirable."}},note:"Sedating first-generation antihistamine. BNFC uses age-based fixed doses."},
+{name:"Acyclovir",generic:"Aciclovir - Chickenpox",cat:"Antivirals & Antifungals",lo:20,hi:20,max:800,freq:"Every 6h x5 days",route:"PO",conc:40,concL:"200 mg/5 mL",refs:{BNFC:{dose:"20 mg/kg (max 800 mg) every 6h x5 days",note:"Start within 24h of rash; IV for severe/immunocompromised."},HLL:{dose:"20 mg/kg/dose every 6h (max 800 mg) x5 days",note:"Ensure adequate hydration to prevent renal crystallisation."},Taketomo:{dose:"20 mg/kg/dose every 6h (max 800 mg)",note:"Low oral bioavailability; IV preferred for encephalitis."},UpToDate:{dose:"20 mg/kg/dose (max 800 mg) every 6h x5 days",note:"Start within 24h; IV acyclovir 10-20 mg/kg every 8h for immunocompromised or severe cases."}},note:"Start within 24h of rash onset. IV required for severe/immunocompromised cases."},
+{name:"Fluconazole",generic:"",cat:"Antivirals & Antifungals",lo:3,hi:6,max:200,freq:"Once daily",route:"PO / IV",conc:10,concL:"50 mg/5 mL suspension",refs:{BNFC:{dose:"3-6 mg/kg once daily (loading 6-12 mg/kg day 1; max 400 mg)",note:"Indication determines dose."},HLL:{dose:"3-12 mg/kg once daily (max 400 mg)",note:"Loading dose (double daily dose) on day 1."},Taketomo:{dose:"3-12 mg/kg once daily",note:"Monitor liver function with prolonged use."},UpToDate:{dose:"3-12 mg/kg once daily (loading dose 6-12 mg/kg day 1)",note:"Dose varies by indication: 3 mg/kg for oral candidiasis; 12 mg/kg for invasive candidiasis."}},note:"Loading dose typically double the daily dose on day 1. Dose varies by indication."},
+{name:"Oseltamivir",generic:"Tamiflu",cat:"Antivirals & Antifungals",lo:2,hi:2,max:75,freq:"Every 12h x5 days",route:"PO",conc:15,concL:"75 mg capsule dissolved in 5 mL water = 15 mg/mL",refs:{BNFC:{dose:"Under 15 kg: 30 mg BD; 15-23 kg: 45 mg BD; 23-40 kg: 60 mg BD; over 40 kg: 75 mg BD",note:"Use fixed weight-based dosing; start within 48h."},HLL:{dose:"Same weight-based fixed dosing",note:"Reduces influenza duration by 1-2 days when started early."},Taketomo:{dose:"Same weight-based fixed dosing",note:"Treatment and prophylaxis doses differ; prophylaxis is once daily same dose x10 days."},UpToDate:{dose:"Under 15 kg: 30 mg BD; 15-23 kg: 45 mg BD; 23-40 kg: 60 mg BD; over 40 kg: 75 mg BD x5 days",note:"Most effective when started within 48h of symptom onset."}},note:"PREPARATION: Open one 75 mg capsule and dissolve the powder in exactly 5 mL of clean water to make a 15 mg/mL suspension. Shake well before each use. Use immediately after preparation. Use fixed weight-based dosing in practice. Start within 48h of symptoms."}
+];
+
+var CC={"Analgesics & Antipyretics":{bg:"#E6F1FB",tx:"#0C447C"},"Antibiotics":{bg:"#E1F5EE",tx:"#085041"},"Emergency":{bg:"#FCEBEB",tx:"#791F1F"},"Respiratory":{bg:"#EAF3DE",tx:"#27500A"},"Seizures / CNS":{bg:"#EEEDFE",tx:"#3C3489"},"GI":{bg:"#FAEEDA",tx:"#633806"},"Antihistamines":{bg:"#FBE9E7",tx:"#BF360C"},"Antivirals & Antifungals":{bg:"#E0F2F1",tx:"#004D40"}};
+
+var CONC_BY_ROUTE={
+  "Paracetamol":{"PO":{c:24,l:"120 mg/5 mL syrup"},"IV":{c:10,l:"10 mg/mL (1 g/100 mL bag)"},"PR":{c:0,l:"Suppository - select nearest size (60 mg, 125 mg, 250 mg, 500 mg)"}},
+  "Metronidazole":{"PO":{c:40,l:"200 mg/5 mL oral suspension"},"IV":{c:5,l:"5 mg/mL (500 mg/100 mL bag)"}},
+  "Cloxacillin":{"PO":{c:50,l:"250 mg/5 mL oral suspension"},"IV":{c:25,l:"500 mg/20 mL (reconstituted)"}},
+  "Dexamethasone":{"PO":{c:0.4,l:"2 mg/5 mL oral solution"},"IV":{c:4,l:"4 mg/mL injection"},"IM":{c:4,l:"4 mg/mL injection"}},
+  "Ondansetron":{"PO":{c:0.8,l:"4 mg/5 mL syrup"},"IV":{c:2,l:"2 mg/mL injection"}},
+  "Fluconazole":{"PO":{c:10,l:"50 mg/5 mL suspension"},"IV":{c:2,l:"2 mg/mL (200 mg/100 mL bag)"}},
+  "Midazolam":{"Buccal":{c:5,l:"5 mg/mL buccal solution (Buccolam)"},"IN":{c:5,l:"5 mg/mL intranasal"},"IV":{c:1,l:"1 mg/mL (diluted for IV use)"}}
+};
+
+var CATS=(function(){var s={},r=[];for(var i=0;i<DRUGS.length;i++){if(!s[DRUGS[i].cat]){s[DRUGS[i].cat]=1;r.push(DRUGS[i].cat);}}return r;})();
+
+var state={screen:"splash",wt:"",age:"",search:"",cat:"All",drug:null,conc:"",concLabel:"",selectedRoute:"",showRefs:false,fbType:"error",fbDrug:"",fbMsg:"",fbSent:false};
+
+function getCR(name,route){return(CONC_BY_ROUTE[name]&&CONC_BY_ROUTE[name][route])||null;}
+function getWt(){return parseFloat(state.wt)||0;}
+
+function getRoutes(rs){
+  if(rs.toLowerCase().indexOf('nebuliz')>=0) return['Nebulized'];
+  var out=[];
+  if(/\bPO\b/.test(rs)) out.push('PO');
+  if(/\bIV\b/.test(rs)) out.push('IV');
+  if(/\bIM\b/.test(rs)) out.push('IM');
+  if(/\bSC\b/.test(rs)) out.push('SC');
+  if(/\bPR\b/.test(rs)) out.push('PR');
+  if(/buccal/i.test(rs)) out.push('Buccal');
+  if(/\bIN\b/.test(rs)) out.push('IN');
+  return out.length?out:[rs.split('(')[0].trim()];
+}
+function routeLabel(r){var m={PO:'Oral (PO)',IV:'IV',IM:'IM',SC:'SC',PR:'Rectal (PR)',Nebulized:'Nebulized',Buccal:'Buccal',IN:'Intranasal (IN)'};return m[r]||r;}
+function routeText(r){var m={PO:'by mouth',IV:'intravenously',IM:'intramuscularly',SC:'subcutaneously',PR:'rectally',Nebulized:'by nebulisation',Buccal:'buccally',IN:'intranasally'};return m[r]||r;}
+function defaultRoute(rs){var r=getRoutes(rs);for(var i=0;i<r.length;i++){if(r[i]==='PO') return 'PO';}return r[0];}
+
+function render(){
+  var app=document.getElementById('app');
+  if(state.screen==='splash') app.innerHTML=splashHTML();
+  else if(state.screen==='disclaimer') app.innerHTML=discHTML();
+  else if(state.screen==='home') app.innerHTML=homeHTML();
+  else if(state.screen==='result') app.innerHTML=resultHTML();
+  else if(state.screen==='feedback') app.innerHTML=feedbackHTML();
+  bindEvents();
+}
+
+function splashHTML(){
+  return '<div class="splash">'+
+  '<div class="ring" style="width:340px;height:340px;top:-90px;right:-90px"></div>'+
+  '<div class="ring" style="width:220px;height:220px;bottom:-60px;left:-60px"></div>'+
+  '<div class="logo"><svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="17" y="6" width="6" height="28" rx="3" fill="white"/><rect x="6" y="17" width="28" height="6" rx="3" fill="white"/></svg></div>'+
+  '<h1>PedsCalc</h1>'+
+  '<p>Pediatric Dose Calculator</p>'+
+  '<p style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:1.5rem">BNFC · Harriet Lane · Taketomo · UpToDate</p>'+
+  '<div style="border-top:1px solid rgba(255,255,255,0.15);padding-top:1.25rem;width:100%;max-width:320px;margin:0 auto 1.75rem">'+
+  '<p style="font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px">Developed for</p>'+
+  '<p style="font-size:15px;font-weight:700;color:#fff;letter-spacing:0.3px">SQUH Pharmacy Department</p>'+
+  '<p style="font-size:12px;color:rgba(255,255,255,0.45)">Sultan Qaboos University Hospital</p>'+
+  '</div>'+
+  '<button class="splash-btn" id="btn-start">Get Started</button>'+
+  '<div class="splash-ver">'+
+  '<span style="font-size:11px;color:rgba(255,255,255,0.25)">Version 1.2 - Clinical decision support only</span>'+
+  '<a href="mailto:rassadi222@gmail.com" style="font-size:11px;color:rgba(255,255,255,0.35);text-decoration:none">&#169; Saeed Al Rassadi, April 2026</a>'+
+  '</div></div>';
+}
+
+function discHTML(){
+  return '<div class="disc-wrap"><div class="disc-card">'+
+  '<div class="disc-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="1" fill="#185FA5" stroke="none"/></svg></div>'+
+  '<h2>Clinical Disclaimer</h2>'+
+  '<p>This tool is for <strong>clinical decision support only</strong>. Doses are referenced from BNFC, Harriet Lane Handbook, Taketomo, and UpToDate.</p>'+
+  '<p>Always verify against current local guidelines and your institution\'s UpToDate subscription. This tool does not replace professional clinical judgment.</p>'+
+  '<p style="font-size:12px;color:#bbb">&#169; Saeed Al Rassadi, April 2026. All rights reserved.</p>'+
+  '<button class="disc-btn" id="btn-disc">I understand - continue</button>'+
+  '</div></div>';
+}
+
+function homeHTML(){
+  var q=state.search.toLowerCase();
+  var filtered=[];
+  for(var i=0;i<DRUGS.length;i++){
+    var d=DRUGS[i];
+    var mc=state.cat==='All'||d.cat===state.cat;
+    var ms=d.name.toLowerCase().indexOf(q)>=0||(d.generic||'').toLowerCase().indexOf(q)>=0;
+    if(mc&&ms) filtered.push({d:d,idx:i});
+  }
+  var rows='';
+  if(!filtered.length){
+    rows='<div style="padding:1.25rem;text-align:center;color:#aaa;font-size:14px">No drugs found.</div>';
+  } else {
+    for(var j=0;j<filtered.length;j++){
+      var d=filtered[j].d;
+      var c=CC[d.cat]||{};
+      var dose=d.lo===d.hi?d.lo:(d.lo+'-'+d.hi);
+      var gen=d.generic?(' <span style="font-weight:400;color:#aaa;font-size:12px">- '+d.generic+'</span>'):'';
+      rows+='<div class="drow" data-idx="'+filtered[j].idx+'">'+
+        '<div><div class="dname">'+d.name+gen+'</div>'+
+        '<div class="dsub">'+dose+' mg/kg - '+d.route+'</div></div>'+
+        '<span class="pill" style="background:'+c.bg+';color:'+c.tx+'">'+d.cat+'</span>'+
+        '</div>';
+    }
+  }
+  var pills='';
+  for(var k=0;k<CATS.length;k++){
+    var ct=CATS[k];
+    var cc=CC[ct]||{};
+    var act=state.cat===ct;
+    var sty=act?('background:'+cc.bg+';color:'+cc.tx+';border-color:'+cc.tx+'55'):'';
+    pills+='<button class="cpill cat-pill-btn" data-cat="'+ct+'" style="'+sty+'">'+ct+'</button>';
+  }
+  var catOpts='<option value="All"'+(state.cat==='All'?' selected':'')+'>All</option>';
+  for(var m=0;m<CATS.length;m++){
+    catOpts+='<option value="'+CATS[m]+'"'+(state.cat===CATS[m]?' selected':'')+'>'+CATS[m]+'</option>';
+  }
+  return '<div>'+
+  '<div style="padding:1.25rem 1rem .5rem"><div class="wrap">'+
+  '<div style="display:flex;align-items:center;justify-content:space-between">'+
+  '<div><h1 style="font-size:20px;font-weight:700">PedsCalc</h1><p style="font-size:11px;color:#aaa;margin-top:1px">SQUH Pharmacy Department</p></div>'+
+  '<span style="font-size:10px;font-weight:600;color:#aaa;background:#f0f0f0;padding:3px 9px;border-radius:20px">v1.2</span>'+
+  '</div></div></div>'+
+  '<div class="wrap pull">'+
+  '<div class="stats">'+
+  '<div class="stat"><div class="stat-n">'+DRUGS.length+'</div><div class="stat-l">Drugs</div></div>'+
+  '<div class="stat"><div class="stat-n">'+CATS.length+'</div><div class="stat-l">Categories</div></div>'+
+  '<div class="stat"><div class="stat-n">4</div><div class="stat-l">References</div></div>'+
+  '</div>'+
+  '<div class="card"><div class="card-label">Patient</div>'+
+  '<div class="g2">'+
+  '<div><label>Weight (kg)</label><input type="number" id="inp-wt" value="'+state.wt+'" placeholder="e.g. 12.5" min="0.1" step="0.1"/></div>'+
+  '<div><label>Age (optional)</label><input type="text" id="inp-age" value="'+state.age+'" placeholder="e.g. 3 years"/></div>'+
+  '</div></div>'+
+  '<div class="card"><div class="card-label">Find Drug</div>'+
+  '<div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:.65rem">'+
+  '<div class="search-wrap">'+
+  '<svg class="s-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'+
+  '<input type="text" id="inp-search" value="'+state.search+'" placeholder="Search by name..."/>'+
+  '</div>'+
+  '<select id="inp-cat" style="width:auto">'+catOpts+'</select>'+
+  '</div>'+
+  '<div class="cat-pills">'+pills+'</div></div>'+
+  '<div class="drug-list">'+rows+'</div>'+
+  '<div class="fbstrip">'+
+  '<p style="font-size:12px;color:#aaa;margin-bottom:5px">Found an error or have a suggestion?</p>'+
+  '<button id="btn-go-feedback" style="font-size:13px;color:#185FA5;font-weight:600;background:none;border:none;cursor:pointer;font-family:inherit;padding:0">Send feedback &#8594;</button>'+
+  '</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - Version 1.2 - For clinical decision support only</div>'+
+  '</div></div>';
+}
+
+function resultHTML(){
+  var d=state.drug;
+  if(!d) return '';
+  var wt=getWt();
+  var conc=parseFloat(state.conc)||d.conc;
+  var isSingle=d.lo===d.hi;
+  var c=CC[d.cat]||{};
+  var tMin=wt*d.lo, tMax=wt*d.hi;
+  var cMin=Math.min(tMin,d.max), cMax=Math.min(tMax,d.max);
+  var vMin=conc>0?cMin/conc:0, vMax=conc>0?cMax/conc:0;
+  var isCapped=tMin>d.max||tMax>d.max;
+  var doseStr=isSingle?(''+d.lo):(d.lo+'-'+d.hi);
+  var totStr=isSingle?cMin.toFixed(1):(cMin.toFixed(1)+'-'+cMax.toFixed(1));
+  var volStr=isSingle?vMin.toFixed(2):(vMin.toFixed(2)+'-'+vMax.toFixed(2));
+  var routes=getRoutes(d.route);
+  var tabs='';
+  if(routes.length>1){
+    tabs='<div class="route-tabs">';
+    for(var i=0;i<routes.length;i++){
+      var act=state.selectedRoute===routes[i]?' active':'';
+      tabs+='<button class="rtab'+act+' route-tab-btn" data-route="'+routes[i]+'">'+routeLabel(routes[i])+'</button>';
+    }
+    tabs+='</div>';
+  }
+  var refsHtml='';
+  if(state.showRefs){
+    var rkeys=Object.keys(d.refs);
+    for(var ri=0;ri<rkeys.length;ri++){
+      var rk=rkeys[ri];
+      var rv=d.refs[rk];
+      refsHtml+='<div class="ref-block">'+
+        '<div class="ref-top"><span class="ref-k">'+rk+'</span><span class="ref-dose">'+rv.dose+'</span></div>'+
+        '<div class="ref-note">'+rv.note+'</div>'+
+        '</div>';
+    }
+    refsHtml='<div style="margin-top:.85rem">'+refsHtml+'</div>';
+  }
+  var calcHTML='';
+  if(wt>0){
+    if(parseFloat(state.conc)===0){
+      calcHTML='<div class="metric" style="margin-bottom:.75rem">'+
+        '<div class="metric-l">Calculated dose</div>'+
+        '<div class="metric-v">'+totStr+'<span class="metric-u">mg</span></div></div>'+
+        '<div class="warn">Suppository - select the nearest available size to '+totStr+' mg. Do not cut suppositories.</div>';
+    } else {
+      var capWarn=isCapped?('<div class="err">Max dose cap applied - dose exceeds '+d.max+' mg.</div>'):'';
+      calcHTML=capWarn+
+        '<div class="g2" style="margin-bottom:.75rem">'+
+        '<div class="metric"><div class="metric-l">Total dose</div><div class="metric-v">'+totStr+'<span class="metric-u">mg</span></div></div>'+
+        '<div class="metric mblue"><div class="metric-l">Volume to give</div><div class="metric-v">'+volStr+'<span class="metric-u">mL</span></div></div>'+
+        '</div>'+
+        '<div class="ftrace">'+wt.toFixed(1)+' x '+doseStr+' / '+conc+(isCapped?' capped at '+d.max+' mg':'')+'</div>'+
+        '<div class="remark"><div class="remark-lbl">Administration instruction</div>'+
+        '<div class="remark-text">Give <strong>'+volStr+' mL</strong> ('+totStr+' mg) <strong>'+d.freq+'</strong> - '+routeText(state.selectedRoute)+'</div></div>';
+    }
+  } else {
+    calcHTML='<div class="metric" style="text-align:center;color:#bbb;font-size:14px;padding:1.25rem;margin-bottom:.75rem">Enter patient weight above to calculate</div>';
+  }
+  var noteHTML=d.note?('<div class="warn">'+d.note+'</div>'):'';
+  var genHTML=d.generic?('<div style="font-size:12px;color:#aaa">'+d.generic+'</div>'):'';
+  return '<div>'+
+  '<div style="padding:.75rem 1rem .25rem;background:#f0f4f8"><div class="wrap">'+
+  '<button class="ref-btn" id="btn-back" style="color:#185FA5;font-size:13px;font-weight:600;margin-bottom:.5rem">&#8592; Back</button>'+
+  '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">'+
+  '<div><div class="dname" style="font-size:19px;font-weight:700">'+d.name+'</div>'+genHTML+'</div>'+
+  '<span class="pill" style="background:'+c.bg+';color:'+c.tx+';margin-top:4px">'+d.cat+'</span>'+
+  '</div></div></div>'+
+  '<div class="wrap pull">'+
+  '<div class="card"><div class="g2">'+
+  '<div class="icell"><div class="icell-l">Dose</div><div class="icell-v">'+doseStr+' mg/kg</div></div>'+
+  '<div class="icell"><div class="icell-l">Max single dose</div><div class="icell-v">'+d.max+' mg</div></div>'+
+  '<div class="icell" style="margin-top:8px"><div class="icell-l">Route</div><div class="icell-v">'+d.route+'</div></div>'+
+  '<div class="icell" style="margin-top:8px"><div class="icell-l">Frequency</div><div class="icell-v">'+d.freq+'</div></div>'+
+  '</div></div>'+
+  tabs+
+  '<div class="g2" style="margin-bottom:.85rem">'+
+  '<div><label>Patient weight (kg)</label>'+
+  '<input type="number" id="inp-wt-res" value="'+state.wt+'" placeholder="e.g. 12.5" min="0.1" step="0.1"/>'+
+  (state.age?('<div style="font-size:11px;color:#aaa;margin-top:3px">'+state.age+'</div>'):'')+'</div>'+
+  '<div><label>Concentration (mg/mL)</label>'+
+  '<input type="number" id="inp-conc" value="'+(state.conc||d.conc)+'" min="0.01" step="0.01"/>'+
+  '<div style="font-size:10px;color:#bbb;margin-top:3px">'+(state.concLabel||d.concL)+'</div></div>'+
+  '</div>'+
+  calcHTML+noteHTML+
+  '<div class="card">'+
+  '<button class="ref-btn" id="btn-refs">'+(state.showRefs?'Hide references':'View source references (BNFC - Harriet Lane - Taketomo - UpToDate)')+'</button>'+
+  refsHtml+'</div>'+
+  '<div class="fbstrip">'+
+  '<p style="font-size:12px;color:#aaa;margin-bottom:5px">Found an error or have a suggestion?</p>'+
+  '<button id="btn-go-feedback-res" style="font-size:13px;color:#185FA5;font-weight:600;background:none;border:none;cursor:pointer;font-family:inherit;padding:0">Send feedback &#8594;</button>'+
+  '</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi - Version 1.2</div>'+
+  '</div></div>';
+}
+
+function feedbackHTML(){
+  if(state.fbSent){
+    return '<div>'+
+    '<div style="padding:.75rem 1rem .25rem"><div class="wrap">'+
+    '<button class="ref-btn" id="btn-back-fb" style="color:#185FA5;font-size:13px;font-weight:600">&#8592; Back</button>'+
+    '</div></div>'+
+    '<div class="wrap" style="text-align:center;padding:3rem 1rem">'+
+    '<div style="font-size:48px;margin-bottom:1rem">&#9989;</div>'+
+    '<h2 style="font-size:18px;font-weight:700;margin-bottom:.5rem">Thank you!</h2>'+
+    '<p style="font-size:14px;color:#888;line-height:1.7;margin-bottom:1.5rem">Your feedback has been sent to Saeed Al Rassadi.<br>It helps make PedsCalc better for everyone.</p>'+
+    '<button id="btn-back-fb2" class="disc-btn" style="max-width:280px;margin:0 auto">Back to app</button>'+
+    '</div></div>';
+  }
+  var typeData=[
+    {key:'error',icon:'&#9888;',label:'Drug error',sub:'Wrong dose or data'},
+    {key:'missing',icon:'&#43;',label:'Missing drug',sub:'Add a new drug'},
+    {key:'suggestion',icon:'&#128161;',label:'Suggestion',sub:'General feedback'}
+  ];
+  var typeBtns='';
+  for(var i=0;i<typeData.length;i++){
+    var t=typeData[i];
+    var act=state.fbType===t.key?' active':'';
+    typeBtns+='<button class="fbtb'+act+' fbtb-btn" data-type="'+t.key+'">'+
+      '<div style="font-size:18px;margin-bottom:4px">'+t.icon+'</div>'+
+      '<div>'+t.label+'</div>'+
+      '<div style="font-size:10px;font-weight:400;opacity:.7;margin-top:2px">'+t.sub+'</div>'+
+      '</button>';
+  }
+  var drugSel='';
+  if(state.fbType==='error'){
+    var opts='<option value="">Select a drug...</option>';
+    for(var j=0;j<DRUGS.length;j++){
+      var sel=state.fbDrug===DRUGS[j].name?' selected':'';
+      opts+='<option value="'+DRUGS[j].name+'"'+sel+'>'+DRUGS[j].name+'</option>';
+    }
+    drugSel='<div style="margin-bottom:.75rem"><label>Which drug?</label><select id="fb-drug">'+opts+'</select></div>';
+  }
+  var ph=state.fbType==='error'?'e.g. Amoxicillin dose should be different...':state.fbType==='missing'?'e.g. Please add Flucloxacillin...':'e.g. Would love a neonatal dosing warning...';
+  var lbl=state.fbType==='error'?'What is wrong / what should it be?':state.fbType==='missing'?'Which drug and why?':'Your suggestion';
+  return '<div>'+
+  '<div style="padding:.75rem 1rem .5rem"><div class="wrap">'+
+  '<button class="ref-btn" id="btn-back-fb" style="color:#185FA5;font-size:13px;font-weight:600;margin-bottom:.75rem">&#8592; Back</button>'+
+  '<h1 style="font-size:20px;font-weight:700;margin-bottom:2px">Send Feedback</h1>'+
+  '<p style="font-size:12px;color:#aaa">Help us improve PedsCalc</p>'+
+  '</div></div>'+
+  '<div class="wrap" style="margin-top:.75rem">'+
+  '<div class="card">'+
+  '<div class="card-label">Type of feedback</div>'+
+  '<div class="fb-type-grid">'+typeBtns+'</div>'+
+  drugSel+
+  '<div><label>'+lbl+'</label>'+
+  '<textarea id="fb-msg" rows="5" placeholder="'+ph+'">'+state.fbMsg+'</textarea></div>'+
+  '</div>'+
+  '<button class="send-btn" id="btn-fb-send">Send Feedback</button>'+
+  '<div class="fbstrip">'+
+  '<p style="font-size:12px;color:#aaa;margin-bottom:4px">Or email directly</p>'+
+  '<a href="mailto:rassadi222@gmail.com?subject=PedsCalc Feedback" style="font-size:13px;color:#185FA5;font-weight:600;text-decoration:none">rassadi222@gmail.com</a>'+
+  '</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi - Version 1.2</div>'+
+  '</div></div>';
+}
+
+function bindEvents(){
+  var s=state.screen;
+  var el;
+  if(s==='splash'){
+    el=document.getElementById('btn-start');
+    if(el) el.addEventListener('click',function(){state.screen='disclaimer';render();});
+  } else if(s==='disclaimer'){
+    el=document.getElementById('btn-disc');
+    if(el) el.addEventListener('click',function(){state.screen='home';render();});
+  } else if(s==='home'){
+    el=document.getElementById('inp-wt');
+    if(el) el.addEventListener('input',function(e){state.wt=e.target.value;});
+    el=document.getElementById('inp-age');
+    if(el) el.addEventListener('input',function(e){state.age=e.target.value;});
+    el=document.getElementById('inp-search');
+    if(el) el.addEventListener('input',function(e){state.search=e.target.value;render();});
+    el=document.getElementById('inp-cat');
+    if(el) el.addEventListener('change',function(e){state.cat=e.target.value;render();});
+    var pills=document.querySelectorAll('.cat-pill-btn');
+    for(var i=0;i<pills.length;i++){
+      (function(btn){
+        btn.addEventListener('click',function(){
+          state.cat=state.cat===btn.dataset.cat?'All':btn.dataset.cat;render();
+        });
+      })(pills[i]);
+    }
+    var rows=document.querySelectorAll('.drow');
+    for(var j=0;j<rows.length;j++){
+      (function(row){
+        row.addEventListener('click',function(){
+          var wtEl=document.getElementById('inp-wt');
+          var ageEl=document.getElementById('inp-age');
+          if(wtEl) state.wt=wtEl.value||state.wt;
+          if(ageEl) state.age=ageEl.value||state.age;
+          var d=DRUGS[parseInt(row.dataset.idx)];
+          var dr=defaultRoute(d.route);
+          var cr=getCR(d.name,dr);
+          state.drug=d;state.selectedRoute=dr;
+          state.conc=String(cr?cr.c:d.conc);
+          state.concLabel=cr?cr.l:'';
+          state.showRefs=false;state.screen='result';render();
+        });
+      })(rows[j]);
+    }
+    el=document.getElementById('btn-go-feedback');
+    if(el) el.addEventListener('click',function(){state.fbType='error';state.fbDrug='';state.fbMsg='';state.fbSent=false;state.screen='feedback';render();});
+  } else if(s==='result'){
+    el=document.getElementById('btn-back');
+    if(el) el.addEventListener('click',function(){state.screen='home';render();});
+    el=document.getElementById('inp-wt-res');
+    if(el) el.addEventListener('input',function(e){state.wt=e.target.value;render();});
+    el=document.getElementById('inp-conc');
+    if(el) el.addEventListener('input',function(e){state.conc=e.target.value;render();});
+    el=document.getElementById('btn-refs');
+    if(el) el.addEventListener('click',function(){state.showRefs=!state.showRefs;render();});
+    var rtabs=document.querySelectorAll('.route-tab-btn');
+    for(var ri=0;ri<rtabs.length;ri++){
+      (function(btn){
+        btn.addEventListener('click',function(){
+          var nr=btn.dataset.route;
+          var cr=getCR(state.drug.name,nr);
+          state.selectedRoute=nr;
+          state.conc=String(cr?cr.c:state.drug.conc);
+          state.concLabel=cr?cr.l:'';
+          render();
+        });
+      })(rtabs[ri]);
+    }
+    el=document.getElementById('btn-go-feedback-res');
+    if(el) el.addEventListener('click',function(){
+      state.fbType='error';
+      state.fbDrug=state.drug?state.drug.name:'';
+      state.fbMsg='';state.fbSent=false;state.screen='feedback';render();
+    });
+  } else if(s==='feedback'){
+    el=document.getElementById('btn-back-fb');
+    if(el) el.addEventListener('click',function(){state.fbSent=false;state.screen='home';render();});
+    el=document.getElementById('btn-back-fb2');
+    if(el) el.addEventListener('click',function(){state.fbSent=false;state.screen='home';render();});
+    var fbtbs=document.querySelectorAll('.fbtb-btn');
+    for(var fi=0;fi<fbtbs.length;fi++){
+      (function(btn){
+        btn.addEventListener('click',function(){state.fbType=btn.dataset.type;state.fbMsg='';render();});
+      })(fbtbs[fi]);
+    }
+    el=document.getElementById('fb-drug');
+    if(el) el.addEventListener('change',function(e){state.fbDrug=e.target.value;});
+    el=document.getElementById('fb-msg');
+    if(el) el.addEventListener('input',function(e){state.fbMsg=e.target.value;});
+    el=document.getElementById('btn-fb-send');
+    if(el) el.addEventListener('click',function(){
+      var msgEl=document.getElementById('fb-msg');
+      var msg=msgEl?msgEl.value:'';
+      if(!msg.trim()){alert('Please enter your feedback before sending.');return;}
+      var drugEl=document.getElementById('fb-drug');
+      var drug=drugEl?drugEl.value:'';
+      var typeLabel=state.fbType==='error'?'Drug Error Report':state.fbType==='missing'?'Missing Drug Request':'General Suggestion';
+      var drugLine=drug?('Drug: '+drug+'\n'):'';
+      var body=encodeURIComponent('PedsCalc Feedback\nType: '+typeLabel+'\n'+drugLine+'\n'+msg+'\n\n- Sent from PedsCalc v1.2');
+      var subject=encodeURIComponent('PedsCalc - '+typeLabel);
+      window.location.href='mailto:rassadi222@gmail.com?subject='+subject+'&body='+body;
+      state.fbSent=true;render();
+    });
+  }
+}
+
+// Security
+(function(){
+  function _h(s){var h=5381;for(var i=0;i<s.length;i++){h=((h<<5)+h)+s.charCodeAt(i);h=h&h;}return(h>>>0).toString(16);}
+  var _ik=_h(JSON.stringify(DRUGS));
+  setInterval(function(){
+    try{
+      if(_h(JSON.stringify(DRUGS))!==_ik){
+        document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#fff0f0;padding:2rem;text-align:center"><div><div style="font-size:48px;margin-bottom:1rem">&#9888;</div><h2 style="color:#8b1a1a;font-size:20px;margin-bottom:.75rem">Data Integrity Error</h2><p style="color:#8b1a1a;font-size:14px;line-height:1.7">Drug data has been modified.<br>Please re-download from a verified source.</p><p style="font-size:12px;color:#aaa;margin-top:1rem">&#169; Saeed Al Rassadi</p></div></div>';
+      }
+    }catch(e){}
+  },3000);
+  document.addEventListener('contextmenu',function(e){e.preventDefault();});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&(['I','J','C','K'].indexOf(e.key.toUpperCase())>=0))||(e.metaKey&&e.altKey&&(['I','J','C'].indexOf(e.key.toUpperCase())>=0))||(e.ctrlKey&&e.key.toUpperCase()==='U')){
+      e.preventDefault();
+    }
+  });
+})();
+
+render();
+</script>
+</body>
+</html>
