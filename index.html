@@ -4,6 +4,18 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>PedsCalc · Saeed Al Rassadi</title>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PF4NHVG8D7"></script>
+<script>
+window.dataLayer=window.dataLayer||[];
+function gtag(){dataLayer.push(arguments);}
+gtag('js',new Date());
+gtag('config','G-PF4NHVG8D7');
+function trackEvent(category,action,label){
+  if(typeof gtag!=='undefined'){
+    gtag('event',action,{'event_category':category,'event_label':label});
+  }
+}
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4f8;color:#1a1a1a;min-height:100vh}
@@ -182,8 +194,15 @@ function getCR(name,route){return(CONC_BY_ROUTE[name]&&CONC_BY_ROUTE[name][route
 function checkAccess(){
   var inp=document.getElementById('inp-access');
   var val=inp?inp.value.trim():'';
-  if(val==='SQUH4656'){state.accessError=false;state.screen='splash';render();}
-  else{state.accessError=true;render();}
+  if(val==='SQUH4656'){
+    state.accessError=false;state.screen='splash';
+    trackEvent('Access','login','success');
+    render();
+  } else {
+    state.accessError=true;
+    trackEvent('Access','login','failed');
+    render();
+  }
 }
 
 function getWt(){return parseFloat(state.wt)||0;}
@@ -300,12 +319,15 @@ function homeHTML(){
     catOpts+='<option value="'+CATS[m]+'"'+(state.cat===CATS[m]?' selected':'')+'>'+CATS[m]+'</option>';
   }
   return '<div>'+
-  '<div style="padding:1.25rem 1rem .5rem"><div class="wrap">'+
+  '<div style="padding:1.5rem 1rem 1rem"><div class="wrap">'+
   '<div style="display:flex;align-items:center;justify-content:space-between">'+
-  '<div><h1 style="font-size:20px;font-weight:700">PedsCalc</h1><p style="font-size:11px;color:#aaa;margin-top:1px">SQUH Pharmacy Department</p></div>'+
-  '<span style="font-size:10px;font-weight:600;color:#aaa;background:#f0f0f0;padding:3px 9px;border-radius:20px">v1.2</span>'+
+  '<div style="flex:1;text-align:center">'+
+  '<h1 style="font-size:26px;font-weight:700;letter-spacing:-0.5px">PedsCalc</h1>'+
+  '<p style="font-size:11px;color:#aaa;margin-top:3px">SQUH Pharmacy Department</p>'+
+  '</div>'+
+  '<span style="font-size:10px;font-weight:600;color:#aaa;background:#f0f0f0;padding:3px 9px;border-radius:20px;flex-shrink:0">v1.2</span>'+
   '</div></div></div>'+
-  '<div class="wrap pull">'+
+  '<div class="wrap">'+
   '<div class="stats">'+
   '<div class="stat"><div class="stat-n">'+DRUGS.length+'</div><div class="stat-l">Drugs</div></div>'+
   '<div class="stat"><div class="stat-n">'+CATS.length+'</div><div class="stat-l">Categories</div></div>'+
@@ -498,8 +520,7 @@ function bindEvents(){
     var inp=document.getElementById('inp-access');
     var btn=document.getElementById('btn-access');
     if(inp) inp.addEventListener('keydown',function(e){if(e.key==='Enter'){checkAccess();}});
-    if(btn) btn.addEventListener('click',function(){checkAccess();});
-  } else if(s==='splash'){
+    if(btn) btn.addEventListener('click',function(){checkAccess();});  } else if(s==='splash'){
     el=document.getElementById('btn-start');
     if(el) el.addEventListener('click',function(){state.screen='disclaimer';render();
 window.onerror=function(msg,src,line,col){document.getElementById('app').innerHTML='<div style="padding:2rem;font-family:monospace;font-size:13px;color:#c00"><strong>Error on line '+line+':</strong><br>'+msg+'</div>';return true;};});
@@ -512,7 +533,11 @@ window.onerror=function(msg,src,line,col){document.getElementById('app').innerHT
     el=document.getElementById('inp-age');
     if(el) el.addEventListener('input',function(e){state.age=e.target.value;});
     el=document.getElementById('inp-search');
-    if(el) el.addEventListener('input',function(e){state.search=e.target.value;render();});
+    if(el) el.addEventListener('input',function(e){
+      state.search=e.target.value;
+      if(e.target.value.length>2) trackEvent('Search','drug_search',e.target.value);
+      render();
+    });
     el=document.getElementById('inp-cat');
     if(el) el.addEventListener('change',function(e){state.cat=e.target.value;render();});
     var pills=document.querySelectorAll('.cat-pill-btn');
@@ -537,7 +562,9 @@ window.onerror=function(msg,src,line,col){document.getElementById('app').innerHT
           state.drug=d;state.selectedRoute=dr;
           state.conc=String(cr?cr.c:d.conc);
           state.concLabel=cr?cr.l:'';
-          state.showRefs=false;state.screen='result';render();
+          state.showRefs=false;state.screen='result';
+          trackEvent('Drug','select',d.name);
+          render();
         });
       })(rows[j]);
     }
@@ -561,6 +588,7 @@ window.onerror=function(msg,src,line,col){document.getElementById('app').innerHT
           state.selectedRoute=nr;
           state.conc=String(cr?cr.c:state.drug.conc);
           state.concLabel=cr?cr.l:'';
+          trackEvent('Route','switch',state.drug.name+' - '+nr);
           render();
         });
       })(rtabs[ri]);
@@ -598,6 +626,7 @@ window.onerror=function(msg,src,line,col){document.getElementById('app').innerHT
       var body=encodeURIComponent('PedsCalc Feedback\nType: '+typeLabel+'\n'+drugLine+'\n'+msg+'\n\n- Sent from PedsCalc v1.2');
       var subject=encodeURIComponent('PedsCalc - '+typeLabel);
       window.location.href='mailto:rassadi222@gmail.com?subject='+subject+'&body='+body;
+      trackEvent('Feedback','submit',state.fbType);
       state.fbSent=true;render();
     });
   }
