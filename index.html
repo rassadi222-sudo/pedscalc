@@ -188,9 +188,20 @@ var CONC_BY_ROUTE={
 
 var CATS=(function(){var s={},r=[];for(var i=0;i<DRUGS.length;i++){if(!s[DRUGS[i].cat]){s[DRUGS[i].cat]=1;r.push(DRUGS[i].cat);}}return r;})();
 
-var state={screen:"access",wt:"",age:"",search:"",cat:"All",drug:null,conc:"",concLabel:"",selectedRoute:"",showRefs:false,fbType:"error",fbDrug:"",fbMsg:"",fbSent:false,accessError:false};
+var state={screen:"access",wt:"",wtConfirmed:"",age:"",search:"",cat:"All",drug:null,conc:"",concLabel:"",selectedRoute:"",showRefs:false,fbType:"error",fbDrug:"",fbMsg:"",fbSent:false,accessError:false};
 
 function getCR(name,route){return(CONC_BY_ROUTE[name]&&CONC_BY_ROUTE[name][route])||null;}
+function confirmWt(){
+  var el=document.getElementById('inp-wt');
+  if(el) state.wt=el.value;
+  state.wtConfirmed=state.wt;
+}
+function confirmWtRes(){
+  var el=document.getElementById('inp-wt-res');
+  if(el) state.wt=el.value;
+  state.wtConfirmed=state.wt;
+  render();
+}
 function checkAccess(){
   var inp=document.getElementById('inp-access');
   var val=inp?inp.value.trim():'';
@@ -205,7 +216,7 @@ function checkAccess(){
   }
 }
 
-function getWt(){return parseFloat(state.wt)||0;}
+function getWt(){return parseFloat(state.wtConfirmed)||0;}
 
 function getRoutes(rs){
   if(rs.toLowerCase().indexOf('nebuliz')>=0) return['Nebulized'];
@@ -334,10 +345,11 @@ function homeHTML(){
   '<div class="stat"><div class="stat-n">4</div><div class="stat-l">References</div></div>'+
   '</div>'+
   '<div class="card"><div class="card-label">Patient</div>'+
-  '<div class="g2">'+
+  '<div class="g2" style="margin-bottom:.75rem">'+
   '<div><label>Weight (kg)</label><input type="number" id="inp-wt" value="'+state.wt+'" placeholder="e.g. 12.5" min="0.1" step="0.1"/></div>'+
   '<div><label>Age (optional)</label><input type="text" id="inp-age" value="'+state.age+'" placeholder="e.g. 3 years"/></div>'+
-  '</div></div>'+
+  '</div>'+
+  '</div>'+
   '<div class="card"><div class="card-label">Find Drug</div>'+
   '<div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:.65rem">'+
   '<div class="search-wrap">'+
@@ -433,7 +445,10 @@ function resultHTML(){
   tabs+
   '<div class="g2" style="margin-bottom:.85rem">'+
   '<div><label>Patient weight (kg)</label>'+
-  '<input type="number" id="inp-wt-res" value="'+state.wt+'" placeholder="e.g. 12.5" min="0.1" step="0.1"/>'+
+  '<div style="display:flex;gap:6px">'+
+  '<input type="number" id="inp-wt-res" value="'+state.wt+'" placeholder="e.g. 12.5" min="0.1" step="0.1" style="flex:1"/>'+
+  '<button id="btn-calc" style="padding:9px 14px;background:#185FA5;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Calc</button>'+
+  '</div>'+
   (state.age?('<div style="font-size:11px;color:#aaa;margin-top:3px">'+state.age+'</div>'):'')+'</div>'+
   '<div><label>Concentration (mg/mL)</label>'+
   '<input type="number" id="inp-conc" value="'+(state.conc||d.conc)+'" min="0.01" step="0.01"/>'+
@@ -530,6 +545,8 @@ window.onerror=function(msg,src,line,col){document.getElementById('app').innerHT
   } else if(s==='home'){
     el=document.getElementById('inp-wt');
     if(el) el.addEventListener('input',function(e){state.wt=e.target.value;});
+    el=document.getElementById('inp-wt');
+    if(el) el.addEventListener('keydown',function(e){if(e.key==='Enter'){confirmWt();}});
     el=document.getElementById('inp-age');
     if(el) el.addEventListener('input',function(e){state.age=e.target.value;});
     el=document.getElementById('inp-search');
@@ -554,7 +571,7 @@ window.onerror=function(msg,src,line,col){document.getElementById('app').innerHT
         row.addEventListener('click',function(){
           var wtEl=document.getElementById('inp-wt');
           var ageEl=document.getElementById('inp-age');
-          if(wtEl) state.wt=wtEl.value||state.wt;
+          if(wtEl){state.wt=wtEl.value||state.wt;state.wtConfirmed=state.wt;}
           if(ageEl) state.age=ageEl.value||state.age;
           var d=DRUGS[parseInt(row.dataset.idx)];
           var dr=defaultRoute(d.route);
@@ -574,7 +591,10 @@ window.onerror=function(msg,src,line,col){document.getElementById('app').innerHT
     el=document.getElementById('btn-back');
     if(el) el.addEventListener('click',function(){state.screen='home';render();});
     el=document.getElementById('inp-wt-res');
-    if(el) el.addEventListener('input',function(e){state.wt=e.target.value;render();});
+    if(el) el.addEventListener('input',function(e){state.wt=e.target.value;});
+    if(el) el.addEventListener('keydown',function(e){if(e.key==='Enter'){confirmWtRes();}});
+    el=document.getElementById('btn-calc');
+    if(el) el.addEventListener('click',function(){confirmWtRes();});
     el=document.getElementById('inp-conc');
     if(el) el.addEventListener('input',function(e){state.conc=e.target.value;render();});
     el=document.getElementById('btn-refs');
