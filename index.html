@@ -713,7 +713,8 @@ var CONC_BY_ROUTE={
 };
 
 var CATS=(function(){var s={},r=[];for(var i=0;i<DRUGS.length;i++){if(!s[DRUGS[i].cat]){s[DRUGS[i].cat]=1;r.push(DRUGS[i].cat);}}return r;})();
-var state={screen:"access",wt:"",wtConfirmed:"",age:"",search:"",cat:"All",drug:null,conc:"",concLabel:"",selectedRoute:"",showRefs:false,fbType:"error",fbDrug:"",fbMsg:"",fbSent:false,accessError:false};
+var state={screen:"access",wt:"",wtConfirmed:"",age:"",search:"",cat:"All",drug:null,conc:"",concLabel:"",selectedRoute:"",showRefs:false,fbType:"error",fbDrug:"",fbMsg:"",fbSent:false,accessError:false,
+rEq:"schwartz2009",rWt:"",rHt:"",rAge:"",rSex:"male",rScr:"",rScrUnit:"umol",rResult:null};
 
 function getCR(name,route){return(CONC_BY_ROUTE[name]&&CONC_BY_ROUTE[name][route])||null;}
 function getWt(){return parseFloat(state.wtConfirmed)||0;}
@@ -740,6 +741,7 @@ function render(){
   else if(state.screen==='disclaimer') app.innerHTML=discHTML();
   else if(state.screen==='home') app.innerHTML=homeHTML();
   else if(state.screen==='result') app.innerHTML=resultHTML();
+  else if(state.screen==='renal') app.innerHTML=renalHTML();
   else if(state.screen==='feedback') app.innerHTML=feedbackHTML();
   bindEvents();
 }
@@ -837,6 +839,13 @@ function homeHTML(){
   '<div class="stat"><div class="stat-n">'+DRUGS.length+'</div><div class="stat-l">Drugs</div></div>'+
   '<div class="stat"><div class="stat-n">'+CATS.length+'</div><div class="stat-l">Categories</div></div>'+
   '<div class="stat"><div class="stat-n">8</div><div class="stat-l">References</div></div>'+
+  '</div>'+
+  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.85rem">'+
+  '<button id="btn-go-renal" style="padding:12px;background:#E6F1FB;color:#0C447C;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">'+
+  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0C447C" stroke-width="2" stroke-linecap="round"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>'+
+  'Renal Dosing</button>'+
+  '<button style="padding:12px;background:#E1F5EE;color:#085041;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;opacity:.5" disabled>'+
+  'Neonatal (v2.0)</button>'+
   '</div>'+
   '<div class="card"><div class="card-label">Patient</div>'+
   '<div class="g2" style="margin-bottom:.75rem">'+
@@ -1040,6 +1049,148 @@ function checkAccess(){
   else{state.accessError=true;trackEvent('Access','login','failed');render();}
 }
 
+function calcCrCl(){
+  var wt=parseFloat(state.rWt)||0;
+  var ht=parseFloat(state.rHt)||0;
+  var age=parseFloat(state.rAge)||0;
+  var scr=parseFloat(state.rScr)||0;
+  var unit=state.rScrUnit;
+  var eq=state.rEq;
+  if(!scr||!ht) return null;
+  var scrMgDl=unit==='umol'?scr/88.4:scr;
+  var scrUmol=unit==='umol'?scr:scr*88.4;
+  var crcl=0;
+  var formula='';
+  if(eq==='schwartz2009'){
+    crcl=0.413*ht/scrMgDl;
+    formula='0.413 x '+ht+' / '+scrMgDl.toFixed(3);
+  } else if(eq==='schwartz1976'){
+    var k=0.55; var kLabel='0.55';
+    if(age<1){k=0.45;kLabel='0.45 (infant)';}
+    else if(state.rSex==='male'&&age>=13){k=0.7;kLabel='0.7 (adolescent male)';}
+    crcl=k*ht/scrMgDl;
+    formula='k('+kLabel+') x '+ht+' / '+scrMgDl.toFixed(3);
+  } else if(eq==='counahan'){
+    crcl=0.43*ht/scrUmol;
+    formula='0.43 x '+ht+' / '+scrUmol.toFixed(1);
+  } else if(eq==='cg'){
+    if(!wt||age<12) return {error:'Cockcroft-Gault requires age 12 years or over and weight.'};
+    var raw=((140-age)*wt*(state.rSex==='female'?0.85:1))/(72*scrMgDl);
+    var bsa=Math.sqrt(ht*wt/3600);
+    crcl=raw*1.73/bsa;
+    formula='[(140-'+age+') x '+wt+' x '+(state.rSex==='female'?'0.85':'1.0')+'] / (72 x '+scrMgDl.toFixed(3)+') normalised by BSA';
+  }
+  var stage=''; var stageColor='';
+  if(crcl>=90){stage='G1 - Normal or high';stageColor='#085041';}
+  else if(crcl>=60){stage='G2 - Mildly decreased';stageColor='#27500A';}
+  else if(crcl>=45){stage='G3a - Mild-moderate decrease';stageColor='#633806';}
+  else if(crcl>=30){stage='G3b - Moderate-severe decrease';stageColor='#7a5500';}
+  else if(crcl>=15){stage='G4 - Severely decreased';stageColor='#791F1F';}
+  else{stage='G5 - Kidney failure';stageColor='#8b1a1a';}
+  return {crcl:crcl.toFixed(1),stage:stage,stageColor:stageColor,formula:formula};
+}
+
+var RENAL_DRUGS=[
+  {name:"Gentamicin",normal:"5-7.5 mg/kg every 24h",mild:"5-7.5 mg/kg every 36h",mod:"5-7.5 mg/kg every 48h",severe:"Avoid or TDM-guided extended interval",ref:"BNFC / UpToDate"},
+  {name:"Vancomycin",normal:"15 mg/kg every 6h (TDM)",mild:"15 mg/kg every 12h (TDM)",mod:"15 mg/kg every 24h (TDM)",severe:"TDM-guided; consider single dose only",ref:"BNFC / UpToDate"},
+  {name:"Acyclovir IV",normal:"10-20 mg/kg every 8h",mild:"10-20 mg/kg every 12h",mod:"10-20 mg/kg every 24h",severe:"10 mg/kg every 24h; ensure hydration",ref:"BNFC / Taketomo"},
+  {name:"Co-trimoxazole",normal:"Standard dose every 12h",mild:"Standard dose every 12h",mod:"50% of standard dose",severe:"Avoid (CrCl under 15)",ref:"BNFC / UpToDate"},
+  {name:"Fluconazole",normal:"Standard dose",mild:"Standard loading; then 50% daily",mod:"50% of standard dose",severe:"50% of standard dose; monitor closely",ref:"BNFC / Taketomo"},
+  {name:"Oseltamivir",normal:"Standard weight-based dose",mild:"Standard dose",mod:"30 mg once daily (CrCl 10-30)",severe:"Not recommended (CrCl under 10)",ref:"UpToDate / Taketomo"},
+  {name:"Cephalexin",normal:"Standard dose every 6h",mild:"Standard dose every 8-12h",mod:"Standard dose every 12h",severe:"Standard dose every 24h",ref:"BNFC / UpToDate"},
+  {name:"Cefotaxime",normal:"Standard dose every 6-8h",mild:"Standard dose",mod:"50% dose every 8-12h",severe:"50% dose every 24h",ref:"BNFC"},
+  {name:"Metronidazole",normal:"Standard dose every 8h",mild:"Standard dose",mod:"Standard dose; use with caution",severe:"Reduce by 50%; use with caution",ref:"BNFC / UpToDate"},
+  {name:"Ceftriaxone",normal:"Standard dose (minimal adjustment)",mild:"Standard dose",mod:"Standard dose (max 2 g/day severe)",severe:"Max 2 g/day; monitor closely",ref:"BNFC"}
+];
+
+function renalHTML(){
+  var EQS=[
+    {key:'schwartz2009',label:'Bedside Schwartz (2009)',short:'Recommended for children',formula:'0.413 x Height (cm) / SCr (mg/dL)',ref:'Schwartz GJ et al. JASN 2009;20(3):629-637',note:'Best validated in children 1-16 years. Uses single k value (0.413) standardised to IDMS creatinine assays. Recommended by KDIGO for paediatric CrCl estimation.'},
+    {key:'schwartz1976',label:'Original Schwartz (1976)',short:'Age/sex-dependent k value',formula:'k x Height (cm) / SCr (mg/dL)',ref:'Schwartz GJ et al. Pediatrics 1976;58(2):259-263',note:'k varies: 0.45 (infants under 1yr), 0.55 (children and adolescent girls), 0.7 (adolescent boys 13yr and over). May overestimate CrCl compared to 2009 version.'},
+    {key:'counahan',label:'Counahan-Barratt (1976)',short:'Uses SCr in umol/L',formula:'0.43 x Height (cm) / SCr (umol/L)',ref:'Counahan R et al. Arch Dis Child 1976;51(11):875-878',note:'Developed in UK using SCr in umol/L (common in Oman/UK labs). Preferred when SCr is reported in umol/L to avoid conversion errors.'},
+    {key:'cg',label:'Cockcroft-Gault (1976)',short:'Adolescents 12 years and over only',formula:'[(140-age) x weight x 0.85(female)] / (72 x SCr) normalised by BSA',ref:'Cockcroft DW & Gault MH. Nephron 1976;16(1):31-41',note:'Applicable to adolescents 12 years and over only. Gives absolute CrCl normalised to 1.73m2 using Mosteller BSA formula. Less accurate in children under 12.'}
+  ];
+  var res=state.rResult;
+  var eqCards='';
+  for(var i=0;i<EQS.length;i++){
+    var e=EQS[i];
+    var act=state.rEq===e.key;
+    eqCards+='<div data-eq="'+e.key+'" class="eq-card'+(act?' eq-active':'')+'" style="border:1.5px solid '+(act?'#185FA5':'#e5e5e5')+';border-radius:12px;padding:.75rem 1rem;cursor:pointer;background:'+(act?'#E6F1FB':'#fff')+';margin-bottom:8px">'+
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px">'+
+      '<div style="font-size:13px;font-weight:700;color:'+(act?'#0C447C':'#1a1a1a')+'">'+e.label+'</div>'+
+      '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:'+(act?'#185FA5':'#eee')+';color:'+(act?'#fff':'#888')+';white-space:nowrap">'+e.short+'</span>'+
+      '</div>'+
+      '<div style="font-size:11px;color:#185FA5;font-family:monospace;margin-bottom:4px">'+e.formula+'</div>'+
+      '<div style="font-size:11px;color:#aaa">Ref: '+e.ref+'</div>'+
+      (act?('<div style="font-size:12px;color:#555;margin-top:6px;line-height:1.6;padding-top:6px;border-top:1px solid #d0e4f7">'+e.note+'</div>'):'')+'</div>';
+  }
+  var scrLabel=state.rScrUnit==='umol'?'SCr (umol/L)':'SCr (mg/dL)';
+  var resultHTML='';
+  if(res){
+    if(res.error){
+      resultHTML='<div class="err">'+res.error+'</div>';
+    } else {
+      var crcl=parseFloat(res.crcl);
+      var adj=crcl>=50?'normal':crcl>=30?'mild':crcl>=10?'mod':'severe';
+      var drugRows='';
+      for(var di=0;di<RENAL_DRUGS.length;di++){
+        var rd=RENAL_DRUGS[di];
+        var dose=adj==='normal'?rd.normal:adj==='mild'?rd.mild:adj==='mod'?rd.mod:rd.severe;
+        var isReduced=adj!=='normal';
+        drugRows+='<div style="padding:.65rem 0;border-bottom:1px solid #f0f0f0">'+
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'+
+          '<span style="font-size:13px;font-weight:600;color:#1a1a1a;min-width:120px">'+rd.name+'</span>'+
+          '<span style="font-size:12px;color:'+(isReduced?'#791F1F':'#085041')+';text-align:right;flex:1">'+dose+'</span>'+
+          '</div>'+
+          '<div style="font-size:10px;color:#bbb;margin-top:2px">Ref: '+rd.ref+'</div></div>';
+      }
+      resultHTML='<div class="card" style="margin-bottom:.85rem">'+
+        '<div style="text-align:center;margin-bottom:1rem">'+
+        '<div style="font-size:13px;color:#888;margin-bottom:4px">Estimated CrCl</div>'+
+        '<div style="font-size:36px;font-weight:700;color:#0C447C">'+res.crcl+'</div>'+
+        '<div style="font-size:13px;color:#185FA5;margin-bottom:6px">mL/min/1.73m2</div>'+
+        '<div style="font-size:13px;font-weight:700;color:'+res.stageColor+';background:#f5f5f5;border-radius:20px;padding:4px 16px;display:inline-block">'+res.stage+'</div>'+
+        '</div>'+
+        '<div class="ftrace">'+res.formula+'</div></div>'+
+        '<div class="card">'+
+        '<div class="card-label">Drug dose adjustments for CrCl '+res.crcl+' mL/min/1.73m2</div>'+
+        '<div style="font-size:11px;color:#aaa;margin-bottom:.75rem">Based on BNFC, UpToDate, and Taketomo recommendations</div>'+
+        drugRows+'</div>';
+    }
+  }
+  return '<div>'+
+  '<div style="padding:.75rem 1rem .25rem;background:#f0f4f8"><div class="wrap">'+
+  '<button class="ref-btn" id="btn-back-renal" style="color:#185FA5;font-size:13px;font-weight:600;margin-bottom:.5rem">&#8592; Back</button>'+
+  '<h1 style="font-size:20px;font-weight:700;margin-bottom:2px">Renal Dosing</h1>'+
+  '<p style="font-size:12px;color:#aaa">CrCl estimation for paediatric drug dosing</p>'+
+  '</div></div>'+
+  '<div class="wrap" style="margin-top:.75rem">'+
+  '<div class="card"><div class="card-label">Select equation</div>'+eqCards+'</div>'+
+  '<div class="card"><div class="card-label">Patient</div>'+
+  '<div class="g2" style="margin-bottom:10px">'+
+  '<div><label>Weight (kg)</label><input type="number" id="r-wt" value="'+state.rWt+'" placeholder="e.g. 25" min="1" step="0.1"/></div>'+
+  '<div><label>Height (cm)</label><input type="number" id="r-ht" value="'+state.rHt+'" placeholder="e.g. 120" min="30" step="0.5"/></div>'+
+  '</div>'+
+  '<div class="g2" style="margin-bottom:10px">'+
+  '<div><label>Age (years)</label><input type="number" id="r-age" value="'+state.rAge+'" placeholder="e.g. 8" min="0" step="0.5"/></div>'+
+  '<div><label>Sex</label><select id="r-sex">'+
+  '<option value="male"'+(state.rSex==='male'?' selected':'')+'>Male</option>'+
+  '<option value="female"'+(state.rSex==='female'?' selected':'')+'>Female</option>'+
+  '</select></div></div>'+
+  '<div style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:10px">'+
+  '<div><label>'+scrLabel+'</label><input type="number" id="r-scr" value="'+state.rScr+'" placeholder="'+(state.rScrUnit==='umol'?'e.g. 60':'e.g. 0.7')+'" min="0" step="0.1"/></div>'+
+  '<div><label>Unit</label><select id="r-scr-unit">'+
+  '<option value="umol"'+(state.rScrUnit==='umol'?' selected':'')+'>umol/L</option>'+
+  '<option value="mgdl"'+(state.rScrUnit==='mgdl'?' selected':'')+'>mg/dL</option>'+
+  '</select></div></div>'+
+  '<button id="btn-calc-renal" style="width:100%;padding:12px;background:#185FA5;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Calculate CrCl</button>'+
+  '</div>'+
+  resultHTML+
+  '<div class="warn" style="margin-bottom:.85rem">CrCl estimates are approximations. Always use clinical judgment and TDM for critical drugs. Values may be less accurate in neonates, severe malnutrition, or acute kidney injury.</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - Version 1.3</div>'+
+  '</div></div>';
+}
+
 function bindEvents(){
   var s=state.screen;
   var el;
@@ -1094,6 +1245,8 @@ function bindEvents(){
         render();
       });})(rows[j]);
     }
+    el=document.getElementById('btn-go-renal');
+    if(el) el.addEventListener('click',function(){state.screen='renal';state.rResult=null;render();});
     el=document.getElementById('btn-go-feedback');
     if(el) el.addEventListener('click',function(){state.fbType='error';state.fbDrug='';state.fbMsg='';state.fbSent=false;state.screen='feedback';render();});
   } else if(s==='result'){
@@ -1126,6 +1279,40 @@ function bindEvents(){
       state.fbType='error';
       state.fbDrug=state.drug?state.drug.name:'';
       state.fbMsg='';state.fbSent=false;state.screen='feedback';render();
+    });
+  } else if(s==='renal'){
+    el=document.getElementById('btn-back-renal');
+    if(el) el.addEventListener('click',function(){state.screen='home';render();});
+    el=document.getElementById('r-wt');
+    if(el) el.addEventListener('input',function(e){state.rWt=e.target.value;});
+    el=document.getElementById('r-ht');
+    if(el) el.addEventListener('input',function(e){state.rHt=e.target.value;});
+    el=document.getElementById('r-age');
+    if(el) el.addEventListener('input',function(e){state.rAge=e.target.value;});
+    el=document.getElementById('r-sex');
+    if(el) el.addEventListener('change',function(e){state.rSex=e.target.value;});
+    el=document.getElementById('r-scr');
+    if(el) el.addEventListener('input',function(e){state.rScr=e.target.value;});
+    el=document.getElementById('r-scr-unit');
+    if(el) el.addEventListener('change',function(e){state.rScrUnit=e.target.value;state.rScr='';render();});
+    var eqCards=document.querySelectorAll('.eq-card');
+    for(var ei=0;ei<eqCards.length;ei++){
+      (function(card){card.addEventListener('click',function(){state.rEq=card.dataset.eq;render();});})(eqCards[ei]);
+    }
+    el=document.getElementById('btn-calc-renal');
+    if(el) el.addEventListener('click',function(){
+      var wtEl=document.getElementById('r-wt');
+      var htEl=document.getElementById('r-ht');
+      var ageEl=document.getElementById('r-age');
+      var sexEl=document.getElementById('r-sex');
+      var scrEl=document.getElementById('r-scr');
+      if(wtEl) state.rWt=wtEl.value;
+      if(htEl) state.rHt=htEl.value;
+      if(ageEl) state.rAge=ageEl.value;
+      if(sexEl) state.rSex=sexEl.value;
+      if(scrEl) state.rScr=scrEl.value;
+      state.rResult=calcCrCl();
+      render();
     });
   } else if(s==='feedback'){
     el=document.getElementById('btn-back-fb');
