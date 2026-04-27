@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>PedsCalc · Saeed Al Rassadi</title>
+<title>PedsCalc v1.4 · Saeed Al Rassadi</title>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-PF4NHVG8D7"></script>
 <script>
 window.dataLayer=window.dataLayer||[];
@@ -135,6 +135,40 @@ textarea{resize:vertical}
 <body>
 <div id="app"></div>
 <script>
+/* =====================================================
+   PedsCalc v1.4
+   (c) Saeed Al Rassadi, April 2026
+   v1.4 changes:
+     - Rotating monthly access code (master code preserved)
+     - Monthly code visible on splash screen
+   ===================================================== */
+
+/* === ROTATING ACCESS CODE === */
+var ACCESS_MASTER='SQUH4656';
+var ACCESS_SECRET='PEDS-SQUH-2026';
+
+function _accHash(s){
+  var h=2166136261;
+  for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=(h*16777619)>>>0;}
+  return h;
+}
+function getMonthlyCode(d){
+  d=d||new Date();
+  var ym=d.getFullYear()+'-'+(d.getMonth()+1);
+  var n=_accHash(ACCESS_SECRET+'|'+ym)%10000;
+  return 'SQ'+('0000'+n).slice(-4);
+}
+function isValidAccess(code){
+  if(!code) return false;
+  code=code.trim().toUpperCase();
+  if(code===ACCESS_MASTER) return true;
+  var now=new Date();
+  if(code===getMonthlyCode(now)) return true;
+  var prev=new Date(now.getFullYear(),now.getMonth()-1,1);
+  if(code===getMonthlyCode(prev)) return true;
+  return false;
+}
+
 var DRUGS=[
 {name:"Paracetamol",generic:"Acetaminophen",cat:"Analgesics & Antipyretics",
  indication:"Fever and mild-moderate pain",moa:"Inhibits prostaglandin synthesis centrally; exact mechanism unclear",
@@ -699,7 +733,7 @@ var DRUGS=[
  },
  note:"PREPARATION: Open one 75 mg capsule, dissolve in exactly 5 mL water to make 15 mg/mL. Use immediately. Start within 48h."}
 ];
-
+/* === HELPERS (unchanged from v1.3) === */
 var CC={"Analgesics & Antipyretics":{bg:"#E6F1FB",tx:"#0C447C"},"Antibiotics":{bg:"#E1F5EE",tx:"#085041"},"Emergency":{bg:"#FCEBEB",tx:"#791F1F"},"Respiratory":{bg:"#EAF3DE",tx:"#27500A"},"Seizures / CNS":{bg:"#EEEDFE",tx:"#3C3489"},"GI":{bg:"#FAEEDA",tx:"#633806"},"Antihistamines":{bg:"#FBE9E7",tx:"#BF360C"},"Antivirals & Antifungals":{bg:"#E0F2F1",tx:"#004D40"}};
 
 var CONC_BY_ROUTE={
@@ -713,6 +747,7 @@ var CONC_BY_ROUTE={
 };
 
 var CATS=(function(){var s={},r=[];for(var i=0;i<DRUGS.length;i++){if(!s[DRUGS[i].cat]){s[DRUGS[i].cat]=1;r.push(DRUGS[i].cat);}}return r;})();
+
 var state={screen:"access",wt:"",wtConfirmed:"",age:"",search:"",cat:"All",drug:null,conc:"",concLabel:"",selectedRoute:"",showRefs:false,fbType:"error",fbDrug:"",fbMsg:"",fbSent:false,accessError:false,
 rEq:"schwartz2009",rWt:"",rHt:"",rAge:"",rSex:"male",rScr:"",rScrUnit:"umol",rResult:null};
 
@@ -776,7 +811,8 @@ function splashHTML(){
   '</div>'+
   '<button class="splash-btn" id="btn-start">Get Started</button>'+
   '<div class="splash-ver">'+
-  '<span style="font-size:11px;color:rgba(255,255,255,0.25)">Version 1.3 - Clinical decision support only</span>'+
+  '<span style="font-size:11px;color:rgba(255,255,255,0.25)">Version 1.4 - Clinical decision support only</span>'+
+  '<span style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px">This month\'s code: <strong style="color:rgba(255,255,255,0.7);letter-spacing:1px">'+getMonthlyCode()+'</strong></span>'+
   '<a href="mailto:rassadi222@gmail.com" style="font-size:11px;color:rgba(255,255,255,0.35);text-decoration:none">&#169; Saeed Al Rassadi, April 2026</a>'+
   '</div></div>';
 }
@@ -832,7 +868,7 @@ function homeHTML(){
   '<div style="flex:1;text-align:center">'+
   '<h1 style="font-size:26px;font-weight:700;letter-spacing:-0.5px">PedsCalc</h1>'+
   '<p style="font-size:11px;color:#aaa;margin-top:3px">SQUH Pharmacy Department</p></div>'+
-  '<span style="font-size:10px;font-weight:600;color:#aaa;background:#e8f2f0;padding:3px 9px;border-radius:20px;flex-shrink:0">v1.3</span>'+
+  '<span style="font-size:10px;font-weight:600;color:#aaa;background:#e8f2f0;padding:3px 9px;border-radius:20px;flex-shrink:0">v1.4</span>'+
   '</div></div></div>'+
   '<div class="wrap">'+
   '<div class="stats">'+
@@ -867,7 +903,7 @@ function homeHTML(){
   '<p style="font-size:12px;color:#aaa;margin-bottom:5px">Found an error or have a suggestion?</p>'+
   '<button id="btn-go-feedback" style="font-size:13px;color:#185FA5;font-weight:600;background:none;border:none;cursor:pointer;font-family:inherit;padding:0">Send feedback &#8594;</button>'+
   '</div>'+
-  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - Version 1.3 - For clinical decision support only</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - Version 1.4 - For clinical decision support only</div>'+
   '</div></div>';
 }
 
@@ -969,7 +1005,7 @@ function resultHTML(){
   '<p style="font-size:12px;color:#aaa;margin-bottom:5px">Found an error or have a suggestion?</p>'+
   '<button id="btn-go-feedback-res" style="font-size:13px;color:#185FA5;font-weight:600;background:none;border:none;cursor:pointer;font-family:inherit;padding:0">Send feedback &#8594;</button>'+
   '</div>'+
-  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - Version 1.3</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - Version 1.4</div>'+
   '</div></div>';
 }
 
@@ -1027,7 +1063,7 @@ function feedbackHTML(){
   '<p style="font-size:12px;color:#aaa;margin-bottom:4px">Or email directly</p>'+
   '<a href="mailto:rassadi222@gmail.com?subject=PedsCalc Feedback" style="font-size:13px;color:#185FA5;font-weight:600;text-decoration:none">rassadi222@gmail.com</a>'+
   '</div>'+
-  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - Version 1.3</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - Version 1.4</div>'+
   '</div></div>';
 }
 
@@ -1042,11 +1078,21 @@ function confirmWtRes(){
   state.wtConfirmed=state.wt;
   render();
 }
+
+/* === checkAccess uses new isValidAccess() === */
 function checkAccess(){
   var inp=document.getElementById('inp-access');
-  var val=inp?inp.value.trim():'';
-  if(val==='SQUH4656'){state.accessError=false;state.screen='splash';trackEvent('Access','login','success');render();}
-  else{state.accessError=true;trackEvent('Access','login','failed');render();}
+  var val=inp?inp.value:'';
+  if(isValidAccess(val)){
+    state.accessError=false;
+    state.screen='splash';
+    trackEvent('Access','login','success');
+    render();
+  } else {
+    state.accessError=true;
+    trackEvent('Access','login','failed');
+    render();
+  }
 }
 
 function calcCrCl(){
@@ -1187,7 +1233,7 @@ function renalHTML(){
   '</div>'+
   resultHTML+
   '<div class="warn" style="margin-bottom:.85rem">CrCl estimates are approximations. Always use clinical judgment and TDM for critical drugs. Values may be less accurate in neonates, severe malnutrition, or acute kidney injury.</div>'+
-  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - Version 1.3</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - Version 1.4</div>'+
   '</div></div>';
 }
 
@@ -1336,7 +1382,7 @@ function bindEvents(){
       var drug=drugEl?drugEl.value:'';
       var typeLabel=state.fbType==='error'?'Drug Error Report':state.fbType==='missing'?'Missing Drug Request':'General Suggestion';
       var drugLine=drug?('Drug: '+drug+'\n'):'';
-      var body=encodeURIComponent('PedsCalc Feedback\nType: '+typeLabel+'\n'+drugLine+'\n'+msg+'\n\n- Sent from PedsCalc v1.3');
+      var body=encodeURIComponent('PedsCalc Feedback\nType: '+typeLabel+'\n'+drugLine+'\n'+msg+'\n\n- Sent from PedsCalc v1.4');
       var subject=encodeURIComponent('PedsCalc - '+typeLabel);
       window.location.href='mailto:rassadi222@gmail.com?subject='+subject+'&body='+body;
       trackEvent('Feedback','submit',state.fbType);
