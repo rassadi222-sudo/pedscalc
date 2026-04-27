@@ -749,7 +749,8 @@ var CONC_BY_ROUTE={
 var CATS=(function(){var s={},r=[];for(var i=0;i<DRUGS.length;i++){if(!s[DRUGS[i].cat]){s[DRUGS[i].cat]=1;r.push(DRUGS[i].cat);}}return r;})();
 
 var state={screen:"access",wt:"",wtConfirmed:"",age:"",search:"",cat:"All",drug:null,conc:"",concLabel:"",selectedRoute:"",showRefs:false,fbType:"error",fbDrug:"",fbMsg:"",fbSent:false,accessError:false,
-rEq:"schwartz2009",rWt:"",rHt:"",rAge:"",rSex:"male",rScr:"",rScrUnit:"umol",rResult:null};
+rEq:"schwartz2009",rWt:"",rHt:"",rAge:"",rSex:"male",rScr:"",rScrUnit:"umol",rResult:null,
+fWt:"",fTemp:"",fNeo:false,fResult:null};
 
 function getCR(name,route){return(CONC_BY_ROUTE[name]&&CONC_BY_ROUTE[name][route])||null;}
 function getWt(){return parseFloat(state.wtConfirmed)||0;}
@@ -777,6 +778,7 @@ function render(){
   else if(state.screen==='home') app.innerHTML=homeHTML();
   else if(state.screen==='result') app.innerHTML=resultHTML();
   else if(state.screen==='renal') app.innerHTML=renalHTML();
+  else if(state.screen==='fluids') app.innerHTML=fluidsHTML();
   else if(state.screen==='feedback') app.innerHTML=feedbackHTML();
   bindEvents();
 }
@@ -880,8 +882,9 @@ function homeHTML(){
   '<button id="btn-go-renal" style="padding:12px;background:#E6F1FB;color:#0C447C;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">'+
   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0C447C" stroke-width="2" stroke-linecap="round"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>'+
   'Renal Dosing</button>'+
-  '<button style="padding:12px;background:#E1F5EE;color:#085041;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;opacity:.5" disabled>'+
-  'Neonatal (v2.0)</button>'+
+  '<button id="btn-go-fluids" style="padding:12px;background:#E1F5EE;color:#085041;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">'+
+  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#085041" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 5 14a7 7 0 1 0 14 0Z"/></svg>'+
+  'Maintenance Fluids</button>'+
   '</div>'+
   '<div class="card"><div class="card-label">Patient</div>'+
   '<div class="g2" style="margin-bottom:.75rem">'+
@@ -1237,6 +1240,92 @@ function renalHTML(){
   '</div></div>';
 }
 
+/* === HOLLIDAY-SEGAR MAINTENANCE FLUIDS (v1.4 Step 2) === */
+function calcFluids(){
+  var wt=parseFloat(state.fWt)||0;
+  if(wt<=0) return null;
+  var temp=parseFloat(state.fTemp)||0;
+  /* Holliday-Segar daily mL */
+  var daily=0;
+  if(wt<=10) daily=wt*100;
+  else if(wt<=20) daily=1000+(wt-10)*50;
+  else daily=1500+(wt-20)*20;
+  var dailyBase=daily;
+  /* Fever adjustment: +12% per degree C above 38 */
+  var feverBonus=0;
+  if(temp>38){
+    var deg=temp-38;
+    feverBonus=Math.round(daily*0.12*deg);
+    daily=daily+feverBonus;
+  }
+  var hourly=daily/24;
+  /* 4-2-1 hourly cross-check */
+  var fortyOneHr=0;
+  if(wt<=10) fortyOneHr=wt*4;
+  else if(wt<=20) fortyOneHr=40+(wt-10)*2;
+  else fortyOneHr=60+(wt-20)*1;
+  return {
+    dailyBase:Math.round(dailyBase),
+    daily:Math.round(daily),
+    feverBonus:feverBonus,
+    hourly:hourly.toFixed(1),
+    fortyOneHr:fortyOneHr,
+    isNeonate:state.fNeo
+  };
+}
+
+function fluidsHTML(){
+  var res=state.fResult;
+  var calcBox='';
+  if(res){
+    var feverRow=res.feverBonus>0?
+      '<div class="ftrace">Base '+res.dailyBase+' mL/day + fever bonus '+res.feverBonus+' mL = '+res.daily+' mL/day</div>':
+      '<div class="ftrace">Holliday-Segar: '+res.daily+' mL/day = '+res.hourly+' mL/h</div>';
+    var checkRow='<div class="ftrace" style="margin-top:-.5rem">4-2-1 cross-check: '+res.fortyOneHr+' mL/h (small variations vs Holliday-Segar are normal)</div>';
+    calcBox='<div class="g2" style="margin-bottom:.75rem">'+
+      '<div class="metric"><div class="metric-l">Total daily</div><div class="metric-v">'+res.daily+'<span class="metric-u">mL</span></div></div>'+
+      '<div class="metric mblue"><div class="metric-l">Hourly rate</div><div class="metric-v">'+res.hourly+'<span class="metric-u">mL/h</span></div></div></div>'+
+      feverRow+checkRow+
+      '<div class="remark"><div class="remark-lbl">Suggested fluid</div>'+
+      '<div class="remark-text">'+
+      (res.isNeonate?
+        'Neonates: D10% initial; transition to D10% in 0.45% NaCl based on serum electrolytes (typically day 2-3).':
+        'D5% in 0.9% NaCl + KCl 20 mmol/L (over 4 weeks of age, normonatraemic). Use isotonic fluids - hypotonic increases hyponatraemia risk.')+
+      '</div></div>';
+  } else {
+    calcBox='<div class="metric" style="text-align:center;color:#bbb;font-size:14px;padding:1.25rem">Enter weight and tap Calculate</div>';
+  }
+  return '<div>'+
+  '<div style="padding:.75rem 1rem .25rem;background:#f0f4f8"><div class="wrap">'+
+  '<button class="ref-btn" id="btn-back-fluids" style="color:#185FA5;font-size:13px;font-weight:600;margin-bottom:.5rem">&#8592; Back</button>'+
+  '<h1 style="font-size:20px;font-weight:700;margin-bottom:2px">Maintenance Fluids</h1>'+
+  '<p style="font-size:12px;color:#aaa">Holliday-Segar method for paediatric maintenance</p>'+
+  '</div></div>'+
+  '<div class="wrap" style="margin-top:.75rem">'+
+  '<div class="card"><div class="card-label">Patient</div>'+
+  '<div class="g2" style="margin-bottom:10px">'+
+  '<div><label>Weight (kg)</label><input type="number" id="f-wt" value="'+state.fWt+'" placeholder="e.g. 18" min="0.5" step="0.1"/></div>'+
+  '<div><label>Temperature (&#176;C, optional)</label><input type="number" id="f-temp" value="'+state.fTemp+'" placeholder="e.g. 39" min="35" max="42" step="0.1"/></div>'+
+  '</div>'+
+  '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#444;margin-bottom:10px;cursor:pointer">'+
+  '<input type="checkbox" id="f-neo" '+(state.fNeo?'checked':'')+' style="width:auto;margin:0"/>'+
+  '<span>Neonate (use age-specific fluid choice)</span></label>'+
+  '<button id="btn-calc-fluids" style="width:100%;padding:12px;background:#185FA5;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Calculate</button>'+
+  '</div>'+
+  calcBox+
+  '<div class="card" style="margin-top:.85rem"><div class="card-label">Method (Holliday-Segar)</div>'+
+  '<div style="font-size:12px;color:#666;line-height:1.8">'+
+  '&bull; First 10 kg: 100 mL/kg/day<br>'+
+  '&bull; Next 10 kg (10-20): 50 mL/kg/day<br>'+
+  '&bull; Each kg over 20: 20 mL/kg/day<br>'+
+  '&bull; Fever: add 12% per &#176;C above 38&#176;C<br>'+
+  '<span style="color:#aaa">Ref: Holliday MA, Segar WE. Pediatrics 1957;19(5):823-32</span>'+
+  '</div></div>'+
+  '<div class="warn" style="margin-top:.85rem"><strong>Restrict fluids</strong> in heart failure, SIADH, raised ICP, renal failure, or post-operative period. Use <strong>isotonic</strong> maintenance fluids (e.g., 0.9% NaCl + 5% dextrose) - NICE 2015 / NHS Improvement guidance. Hypotonic fluids increase hyponatraemia risk.</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - Version 1.4</div>'+
+  '</div></div>';
+}
+
 function bindEvents(){
   var s=state.screen;
   var el;
@@ -1293,6 +1382,8 @@ function bindEvents(){
     }
     el=document.getElementById('btn-go-renal');
     if(el) el.addEventListener('click',function(){state.screen='renal';state.rResult=null;render();});
+    el=document.getElementById('btn-go-fluids');
+    if(el) el.addEventListener('click',function(){state.screen='fluids';state.fResult=null;render();});
     el=document.getElementById('btn-go-feedback');
     if(el) el.addEventListener('click',function(){state.fbType='error';state.fbDrug='';state.fbMsg='';state.fbSent=false;state.screen='feedback';render();});
   } else if(s==='result'){
@@ -1358,6 +1449,24 @@ function bindEvents(){
       if(sexEl) state.rSex=sexEl.value;
       if(scrEl) state.rScr=scrEl.value;
       state.rResult=calcCrCl();
+      render();
+    });
+  } else if(s==='fluids'){
+    el=document.getElementById('btn-back-fluids');
+    if(el) el.addEventListener('click',function(){state.screen='home';render();});
+    el=document.getElementById('f-wt');
+    if(el) el.addEventListener('input',function(e){state.fWt=e.target.value;});
+    el=document.getElementById('f-temp');
+    if(el) el.addEventListener('input',function(e){state.fTemp=e.target.value;});
+    el=document.getElementById('f-neo');
+    if(el) el.addEventListener('change',function(e){state.fNeo=e.target.checked;});
+    el=document.getElementById('btn-calc-fluids');
+    if(el) el.addEventListener('click',function(){
+      var w=document.getElementById('f-wt'); if(w) state.fWt=w.value;
+      var t=document.getElementById('f-temp'); if(t) state.fTemp=t.value;
+      var n=document.getElementById('f-neo'); if(n) state.fNeo=n.checked;
+      state.fResult=calcFluids();
+      trackEvent('Fluids','calculate',state.fWt+'kg');
       render();
     });
   } else if(s==='feedback'){
