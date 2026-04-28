@@ -100,17 +100,52 @@ html.theme-light .metric,html.theme-light .icell,html.theme-light .ftrace{backgr
 html.theme-light .info-strip{background:#f0f6ff;color:#444}
 html.theme-light .remark{background:#EBF5FF}
 html.theme-light .remark-text{color:#0C447C}
-html.theme-dark body,html.theme-dark #app{background:#111;color:#e5e5e5}
-html.theme-dark .card,html.theme-dark .drug-list,html.theme-dark .disc-card,html.theme-dark .fbstrip,html.theme-dark .stat{background:#1c1c1e}
-html.theme-dark input,html.theme-dark select,html.theme-dark textarea{background:#2a2a2a;border-color:#3a3a3a;color:#e5e5e5}
-html.theme-dark .metric,html.theme-dark .icell,html.theme-dark .ftrace{background:#2a2a2a}
-html.theme-dark .info-strip{background:#1a2a3a;color:#ccc}
-html.theme-dark .icell-v,html.theme-dark .metric-v{color:#e5e5e5}
-html.theme-dark .remark{background:#1a2a3a}
-html.theme-dark .remark-text{color:#90CAF9}
-html.theme-dark .dname{color:#e5e5e5}
-html.theme-dark .stats{background:#2a2a2a}
-html.theme-dark .footer{color:#444}
+html.theme-dark body,html.theme-dark #app{background:#0a0a0c;color:#e8e8ea}
+html.theme-dark .card,html.theme-dark .drug-list,html.theme-dark .disc-card,html.theme-dark .fbstrip,html.theme-dark .stat{background:#1a1a1d;border-color:#2a2a2e}
+html.theme-dark input,html.theme-dark select,html.theme-dark textarea{background:#262629;border-color:#3a3a3e;color:#f0f0f2}
+html.theme-dark input::placeholder,html.theme-dark textarea::placeholder{color:#6a6a6e}
+html.theme-dark .metric,html.theme-dark .icell,html.theme-dark .ftrace{background:#262629;color:#e8e8ea}
+html.theme-dark .info-strip{background:#1c2a3a;color:#d8d8da}
+html.theme-dark .info-lbl{color:#7ab8e8}
+html.theme-dark .icell-v,html.theme-dark .metric-v{color:#f5f5f7}
+html.theme-dark .icell-l,html.theme-dark .metric-l{color:#9a9a9e}
+html.theme-dark .remark{background:#1c2a3a;border-color:#5aa9e8}
+html.theme-dark .remark-text{color:#cae0f5}
+html.theme-dark .remark-lbl{color:#7ab8e8}
+html.theme-dark .dname{color:#f0f0f2}
+html.theme-dark .stats{background:#2a2a2e}
+html.theme-dark .stat-n{color:#7ab8e8}
+html.theme-dark .stat-l{color:#7a7a7e}
+html.theme-dark .footer{color:#5a5a5e}
+html.theme-dark .drow{border-color:#2a2a2e;background:#1a1a1d}
+html.theme-dark .drow:hover,html.theme-dark .drow:focus{background:#262629}
+html.theme-dark .ref-block{border-color:#2a2a2e}
+html.theme-dark .ref-dose{color:#e8e8ea}
+html.theme-dark .ref-note{color:#9a9a9e}
+html.theme-dark .ref-k{background:#1c2a3a;color:#7ab8e8}
+html.theme-dark .ref-btn{color:#7a7a7e}
+html.theme-dark .card-label{color:#6a6a6e}
+html.theme-dark label{color:#9a9a9e}
+html.theme-dark .disc-card p{color:#bababe}
+html.theme-dark .disc-card h2,html.theme-dark .dname{color:#f0f0f2}
+html.theme-dark .disc-icon{background:#1c2a3a}
+html.theme-dark .warn{background:#2a2200;border-color:#7a6000;color:#e5c040}
+html.theme-dark .err{background:#2a0000;border-color:#7a2020;color:#f09090}
+html.theme-dark .cpill{background:#1a1a1d;border-color:#3a3a3e;color:#9a9a9e}
+html.theme-dark .rtab{background:#1a1a1d;border-color:#3a3a3e;color:#9a9a9e}
+html.theme-dark .rtab.active{background:#1e5a9a;color:#fff;border-color:#1e5a9a}
+html.theme-dark .fbtb{background:#1a1a1d;border-color:#3a3a3e;color:#9a9a9e}
+html.theme-dark .fbtb.active{background:#1c2a3a;border-color:#5aa9e8;color:#7ab8e8}
+html.theme-dark .seg{background:#1a1a1d;border:1px solid #2a2a2e}
+html.theme-dark .seg-btn{color:#9a9a9e}
+html.theme-dark .seg-btn.active{background:#262629;color:#7ab8e8;box-shadow:0 1px 3px rgba(0,0,0,0.4)}
+html.theme-dark .search-wrap input{background:#262629}
+html.theme-dark .mblue{background:linear-gradient(135deg,#1c2a3a,#142030)}
+html.theme-dark .mblue .metric-l{color:#7ab8e8}
+html.theme-dark .mblue .metric-v{color:#cae0f5}
+html.theme-dark .mblue .metric-u{color:#5aa9e8}
+html.theme-dark .gear-btn{color:#7ab8e8}
+html.theme-dark .gear-btn:hover{background:rgba(122,184,232,0.12)}
 /* v1.5: RTL admin instruction (Arabic) */
 .remark-text-ar{direction:rtl;text-align:right;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-serif}
 /* v1.5: settings gear button */
@@ -818,7 +853,8 @@ fWt:"",fTemp:"",fNeo:false,fResult:null,
 bWt:"",bHt:"",bResult:null,
 iDrug:0,iWt:"",iRate:"",iAmt:"",iAmtUnit:"",iVol:"",iResult:null,
 nGA:"",nPNA:"",nWt:"",nDrug:0,nResult:null,
-lang:"en",theme:"auto"};
+lang:"en",theme:"auto",
+showDrugList:false};
 
 /* Step 8: hydrate state with persisted values */
 (function(){
@@ -924,6 +960,8 @@ function homeHTML(){
     var ms=d.name.toLowerCase().indexOf(q)>=0||(d.generic||'').toLowerCase().indexOf(q)>=0;
     if(mc&&ms) filtered.push({d:d,idx:i});
   }
+  /* v1.5 step 2: sort alphabetically by drug name */
+  filtered.sort(function(a,b){return a.d.name.localeCompare(b.d.name);});
   var rows='';
   if(!filtered.length){
     rows='<div style="padding:1.25rem;text-align:center;color:#aaa;font-size:14px">No drugs found.</div>';
@@ -999,7 +1037,16 @@ function homeHTML(){
   '<input type="text" id="inp-search" value="'+state.search+'" placeholder="Search by name..."/></div>'+
   '<select id="inp-cat" style="width:auto">'+catOpts+'</select></div>'+
   '<div class="cat-pills">'+pills+'</div></div>'+
-  '<div class="drug-list">'+rows+'</div>'+
+  /* v1.5 step 2: drug list hidden by default; shown when search/filter active or user opens it */
+  ((state.showDrugList||state.search.length>0||state.cat!=='All')
+    ?('<div class="drug-list">'+rows+'</div>'+
+      (state.showDrugList&&state.search.length===0&&state.cat==='All'
+        ?'<button id="btn-hide-drugs" style="width:100%;padding:10px;background:none;color:#888;border:1px solid #e5e5e5;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:.85rem">Hide list</button>'
+        :''))
+    :('<button id="btn-show-drugs" style="width:100%;padding:14px;background:#fff;color:#185FA5;border:1px dashed #185FA5;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:.85rem;display:flex;align-items:center;justify-content:center;gap:8px">'+
+       '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>'+
+       'Browse all '+DRUGS.length+' drugs (A-Z)</button>')
+  )+
   '<div class="fbstrip">'+
   '<p style="font-size:12px;color:#aaa;margin-bottom:5px">Found an error or have a suggestion?</p>'+
   '<button id="btn-go-feedback" style="font-size:13px;color:#185FA5;font-weight:600;background:none;border:none;cursor:pointer;font-family:inherit;padding:0">Send feedback &#8594;</button>'+
@@ -2046,6 +2093,10 @@ function bindEvents(){
     if(el) el.addEventListener('click',function(){state.fbType='error';state.fbDrug='';state.fbMsg='';state.fbSent=false;state.screen='feedback';render();});
     el=document.getElementById('btn-go-settings');
     if(el) el.addEventListener('click',function(){state.screen='settings';render();});
+    el=document.getElementById('btn-show-drugs');
+    if(el) el.addEventListener('click',function(){state.showDrugList=true;render();});
+    el=document.getElementById('btn-hide-drugs');
+    if(el) el.addEventListener('click',function(){state.showDrugList=false;render();});
   } else if(s==='result'){
     el=document.getElementById('btn-back');
     if(el) el.addEventListener('click',function(){state.screen='home';render();});
