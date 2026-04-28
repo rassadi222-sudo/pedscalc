@@ -752,7 +752,8 @@ var state={screen:"access",wt:"",wtConfirmed:"",age:"",search:"",cat:"All",drug:
 rEq:"schwartz2009",rWt:"",rHt:"",rAge:"",rSex:"male",rScr:"",rScrUnit:"umol",rResult:null,
 fWt:"",fTemp:"",fNeo:false,fResult:null,
 bWt:"",bHt:"",bResult:null,
-iDrug:0,iWt:"",iRate:"",iAmt:"",iAmtUnit:"",iVol:"",iResult:null};
+iDrug:0,iWt:"",iRate:"",iAmt:"",iAmtUnit:"",iVol:"",iResult:null,
+nGA:"",nPNA:"",nWt:"",nDrug:0,nResult:null};
 
 function getCR(name,route){return(CONC_BY_ROUTE[name]&&CONC_BY_ROUTE[name][route])||null;}
 function getWt(){return parseFloat(state.wtConfirmed)||0;}
@@ -784,6 +785,7 @@ function render(){
   else if(state.screen==='bsa') app.innerHTML=bsaHTML();
   else if(state.screen==='ivpo') app.innerHTML=ivpoHTML();
   else if(state.screen==='infusion') app.innerHTML=infusionHTML();
+  else if(state.screen==='neonatal') app.innerHTML=neonatalHTML();
   else if(state.screen==='feedback') app.innerHTML=feedbackHTML();
   bindEvents();
 }
@@ -899,6 +901,9 @@ function homeHTML(){
   '<button id="btn-go-inf" style="padding:12px;background:#EEEDFE;color:#3C3489;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;grid-column:span 2">'+
   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3C3489" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>'+
   'IV Infusion Calculator</button>'+
+  '<button id="btn-go-neo" style="padding:12px;background:#FCEBEB;color:#791F1F;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;grid-column:span 2">'+
+  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#791F1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="4"/><path d="M12 13v8M8 21h8"/></svg>'+
+  'Neonatal Dosing</button>'+
   '</div>'+
   '<div class="card"><div class="card-label">Patient</div>'+
   '<div class="g2" style="margin-bottom:.75rem">'+
@@ -1643,6 +1648,175 @@ function infusionHTML(){
   '</div></div>';
 }
 
+/* === NEONATAL DOSING (v1.4 Step 6) ===
+   Doses are looked up from a GA (gestational age, weeks) x PNA (postnatal age, days) matrix.
+   For each drug a list of {gaMin,gaMax,pnaMin,pnaMax,dose,interval} entries is searched.
+   Always verify against current Neofax / NICU protocol. */
+var NEO_DRUGS=[
+ {name:"Ampicillin",indication:"Sepsis, GBS, meningitis",concL:"50 mg/mL (reconstituted)",
+  doses:[
+   {gaMin:0,gaMax:29,pnaMin:0,pnaMax:28,dose:"50 mg/kg",interval:"every 12h",ref:"Neofax"},
+   {gaMin:30,gaMax:36,pnaMin:0,pnaMax:14,dose:"50 mg/kg",interval:"every 12h",ref:"Neofax"},
+   {gaMin:30,gaMax:36,pnaMin:15,pnaMax:28,dose:"50 mg/kg",interval:"every 8h",ref:"Neofax"},
+   {gaMin:37,gaMax:99,pnaMin:0,pnaMax:7,dose:"50 mg/kg",interval:"every 8h",ref:"Neofax"},
+   {gaMin:37,gaMax:99,pnaMin:8,pnaMax:28,dose:"50 mg/kg",interval:"every 6h",ref:"Neofax"}
+  ],
+  note:"Meningitis: double the dose to 100 mg/kg/dose. Slow IV push acceptable. Compatible with most fluids."},
+ {name:"Gentamicin",indication:"Gram-negative sepsis (with ampicillin)",concL:"10 mg/mL",
+  doses:[
+   {gaMin:0,gaMax:29,pnaMin:0,pnaMax:7,dose:"5 mg/kg",interval:"every 48h",ref:"Neofax"},
+   {gaMin:0,gaMax:29,pnaMin:8,pnaMax:28,dose:"4 mg/kg",interval:"every 36h",ref:"Neofax"},
+   {gaMin:30,gaMax:34,pnaMin:0,pnaMax:7,dose:"4.5 mg/kg",interval:"every 36h",ref:"Neofax"},
+   {gaMin:30,gaMax:34,pnaMin:8,pnaMax:28,dose:"4 mg/kg",interval:"every 24h",ref:"Neofax"},
+   {gaMin:35,gaMax:99,pnaMin:0,pnaMax:28,dose:"4 mg/kg",interval:"every 24h",ref:"Neofax"}
+  ],
+  note:"TDM mandatory: peak 5-12 mg/L (30 min post-infusion); trough under 1 mg/L. Adjust intervals for renal impairment or hypoxic-ischaemic encephalopathy."},
+ {name:"Cefotaxime",indication:"Sepsis, meningitis (preferred over ceftriaxone)",concL:"100 mg/mL (reconstituted)",
+  doses:[
+   {gaMin:0,gaMax:33,pnaMin:0,pnaMax:7,dose:"50 mg/kg",interval:"every 12h",ref:"Neofax"},
+   {gaMin:0,gaMax:33,pnaMin:8,pnaMax:28,dose:"50 mg/kg",interval:"every 8h",ref:"Neofax"},
+   {gaMin:34,gaMax:99,pnaMin:0,pnaMax:7,dose:"50 mg/kg",interval:"every 8h",ref:"Neofax"},
+   {gaMin:34,gaMax:99,pnaMin:8,pnaMax:28,dose:"50 mg/kg",interval:"every 6h",ref:"Neofax"}
+  ],
+  note:"Meningitis: 50 mg/kg every 6h regardless of GA/PNA. No bilirubin displacement (vs ceftriaxone)."},
+ {name:"Vancomycin",indication:"MRSA, coagulase-negative staph sepsis",concL:"5 mg/mL (diluted for infusion)",
+  doses:[
+   {gaMin:0,gaMax:29,pnaMin:0,pnaMax:14,dose:"15 mg/kg",interval:"every 18h",ref:"Neofax"},
+   {gaMin:0,gaMax:29,pnaMin:15,pnaMax:28,dose:"15 mg/kg",interval:"every 12h",ref:"Neofax"},
+   {gaMin:30,gaMax:36,pnaMin:0,pnaMax:14,dose:"15 mg/kg",interval:"every 12h",ref:"Neofax"},
+   {gaMin:30,gaMax:36,pnaMin:15,pnaMax:28,dose:"15 mg/kg",interval:"every 8h",ref:"Neofax"},
+   {gaMin:37,gaMax:99,pnaMin:0,pnaMax:28,dose:"15 mg/kg",interval:"every 8h",ref:"Neofax"}
+  ],
+  note:"TDM after 2nd dose. Target trough 10-15 mg/L (15-20 for CNS). Infuse over minimum 60 min."},
+ {name:"Acyclovir",indication:"HSV (suspected or confirmed)",concL:"7 mg/mL (diluted)",
+  doses:[
+   {gaMin:0,gaMax:99,pnaMin:0,pnaMax:28,dose:"20 mg/kg",interval:"every 8h",ref:"Neofax / AAP Red Book"}
+  ],
+  note:"Duration 14 days (skin/eye/mouth) or 21 days (CNS/disseminated). Monitor renal function and CBC. Ensure good hydration."},
+ {name:"Caffeine citrate",indication:"Apnoea of prematurity",concL:"20 mg/mL caffeine citrate (= 10 mg/mL caffeine base)",
+  doses:[
+   {gaMin:0,gaMax:36,pnaMin:0,pnaMax:28,dose:"Loading 20 mg/kg; maintenance 5-10 mg/kg",interval:"OD (start 24h after loading)",ref:"Neofax"}
+  ],
+  note:"Doses expressed as caffeine citrate. Long half-life (about 100h in preterm). Monitor heart rate. Discontinue when off respiratory support and apnoea-free 5-7 days."},
+ {name:"Phenobarbital",indication:"Neonatal seizures",concL:"60 mg/mL (loading); 20 mg/mL (maintenance)",
+  doses:[
+   {gaMin:0,gaMax:99,pnaMin:0,pnaMax:28,dose:"Loading 20 mg/kg; maintenance 3-5 mg/kg",interval:"every 24h (start 12-24h after load)",ref:"Neofax"}
+  ],
+  note:"Drug of choice for neonatal seizures. Slow IV over 20 min. Half-life 100-200h. Therapeutic range 15-40 mg/L."},
+ {name:"Fluconazole",indication:"Candida prophylaxis or treatment",concL:"2 mg/mL",
+  doses:[
+   {gaMin:0,gaMax:29,pnaMin:0,pnaMax:14,dose:"3 mg/kg (prophylaxis); 12 mg/kg (treatment)",interval:"every 72h",ref:"Neofax / AAP"},
+   {gaMin:0,gaMax:29,pnaMin:15,pnaMax:28,dose:"3 mg/kg (prophylaxis); 12 mg/kg (treatment)",interval:"every 48h",ref:"Neofax / AAP"},
+   {gaMin:30,gaMax:99,pnaMin:0,pnaMax:14,dose:"3 mg/kg (prophylaxis); 12 mg/kg (treatment)",interval:"every 48h",ref:"Neofax / AAP"},
+   {gaMin:30,gaMax:99,pnaMin:15,pnaMax:28,dose:"3 mg/kg (prophylaxis); 12 mg/kg (treatment)",interval:"every 24h",ref:"Neofax / AAP"}
+  ],
+  note:"Prophylaxis often given twice weekly (3-6 mg/kg) in some protocols. Treatment: 12-25 mg/kg/day for invasive candida."},
+ {name:"Vitamin K1 (Phytomenadione)",indication:"VKDB prophylaxis",concL:"10 mg/mL (Konakion)",
+  doses:[
+   {gaMin:0,gaMax:99,pnaMin:0,pnaMax:1,dose:"1 mg IM (over 1500 g); 0.5 mg IM (under 1500 g)",interval:"single dose at birth",ref:"AAP / Neofax"}
+  ],
+  note:"Single IM dose within 6h of birth. Oral alternative: 2 mg at birth, day 7, and 4-6 weeks (breastfed only). IM strongly preferred."},
+ {name:"Surfactant (Poractant alfa)",indication:"Respiratory distress syndrome",concL:"80 mg/mL (Curosurf)",
+  doses:[
+   {gaMin:0,gaMax:36,pnaMin:0,pnaMax:7,dose:"200 mg/kg first dose; 100 mg/kg subsequent",interval:"may repeat every 12h up to 3 doses",ref:"Neofax / EAPM"}
+  ],
+  note:"Endotracheal administration only. Less Invasive Surfactant Administration (LISA) increasingly used. Monitor SpO2 closely during instillation."}
+];
+
+function lookupNeoDose(){
+  var ga=parseFloat(state.nGA)||0;
+  var pna=parseFloat(state.nPNA);
+  if(isNaN(pna)) pna=-1;
+  var idx=parseInt(state.nDrug)||0;
+  var d=NEO_DRUGS[idx];
+  if(!d||ga<=0||pna<0) return null;
+  for(var i=0;i<d.doses.length;i++){
+    var x=d.doses[i];
+    if(ga>=x.gaMin&&ga<=x.gaMax&&pna>=x.pnaMin&&pna<=x.pnaMax){
+      return {drug:d,match:x,ga:ga,pna:pna};
+    }
+  }
+  return {drug:d,match:null,ga:ga,pna:pna};
+}
+
+function neonatalHTML(){
+  var idx=parseInt(state.nDrug)||0;
+  var d=NEO_DRUGS[idx];
+  var res=state.nResult;
+  var drugOpts='';
+  for(var i=0;i<NEO_DRUGS.length;i++){
+    drugOpts+='<option value="'+i+'"'+(i===idx?' selected':'')+'>'+NEO_DRUGS[i].name+'</option>';
+  }
+  /* GA classification */
+  var gaTxt='';
+  var gaNum=parseFloat(state.nGA)||0;
+  if(gaNum>0){
+    if(gaNum<28) gaTxt='Extremely preterm';
+    else if(gaNum<32) gaTxt='Very preterm';
+    else if(gaNum<37) gaTxt='Preterm';
+    else if(gaNum<42) gaTxt='Term';
+    else gaTxt='Post-term';
+  }
+  var resultBox='';
+  if(res){
+    if(!res.match){
+      resultBox='<div class="err">No matching dose entry for GA '+res.ga+' weeks and PNA '+res.pna+' days. Check Neofax / NICU protocol directly.</div>';
+    } else {
+      resultBox='<div class="metric mblue" style="margin-bottom:.5rem">'+
+        '<div class="metric-l">'+res.drug.name+' - GA '+res.ga+'wk / PNA '+res.pna+'d</div>'+
+        '<div class="metric-v" style="font-size:20px">'+res.match.dose+'</div>'+
+        '<div style="font-size:13px;color:#185FA5;margin-top:4px;font-weight:600">'+res.match.interval+'</div></div>'+
+        '<div class="ftrace">Indication: '+res.drug.indication+' | Source: '+res.match.ref+' | Concentration: '+res.drug.concL+'</div>'+
+        '<div class="warn">'+res.drug.note+'</div>';
+    }
+  } else {
+    resultBox='<div class="metric" style="text-align:center;color:#bbb;font-size:14px;padding:1.25rem">Enter GA, PNA, and weight, then tap Look up</div>';
+  }
+  /* Build matrix preview for the selected drug */
+  var matrixRows='';
+  for(var j=0;j<d.doses.length;j++){
+    var x=d.doses[j];
+    var gaR=x.gaMax>=99?(x.gaMin+'+ wk'):(x.gaMin+'-'+x.gaMax+' wk');
+    var pnaR=x.pnaMax>=99?(x.pnaMin+'+ d'):(x.pnaMin+'-'+x.pnaMax+' d');
+    matrixRows+='<div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:6px;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:12px">'+
+      '<span style="color:#0C447C;font-weight:600">'+gaR+'</span>'+
+      '<span style="color:#0C447C;font-weight:600">'+pnaR+'</span>'+
+      '<span style="color:#444">'+x.dose+' '+x.interval+'</span>'+
+      '</div>';
+  }
+  return '<div>'+
+  '<div style="padding:.75rem 1rem .25rem;background:#f0f4f8"><div class="wrap">'+
+  '<button class="ref-btn" id="btn-back-neo" style="color:#185FA5;font-size:13px;font-weight:600;margin-bottom:.5rem">&#8592; Back</button>'+
+  '<h1 style="font-size:20px;font-weight:700;margin-bottom:2px">Neonatal Dosing</h1>'+
+  '<p style="font-size:12px;color:#aaa">Gestational and postnatal age-based dosing</p>'+
+  '</div></div>'+
+  '<div class="wrap" style="margin-top:.75rem">'+
+  '<div class="warn" style="margin-bottom:.85rem"><strong>Neonatal doses are highly age-dependent</strong> and change rapidly with gestational and postnatal age. Always verify with current Neofax / NICU protocol. This tool is decision support only.</div>'+
+  '<div class="card"><div class="card-label">Neonate</div>'+
+  '<div class="g2" style="margin-bottom:10px">'+
+  '<div><label>Gestational age (weeks)</label><input type="number" id="n-ga" value="'+state.nGA+'" placeholder="e.g. 32" min="22" max="44" step="1"/>'+
+  (gaTxt?('<div style="font-size:11px;color:#185FA5;margin-top:3px">'+gaTxt+'</div>'):'')+'</div>'+
+  '<div><label>Postnatal age (days)</label><input type="number" id="n-pna" value="'+state.nPNA+'" placeholder="e.g. 5" min="0" max="365" step="1"/></div>'+
+  '</div>'+
+  '<label>Current weight (kg)</label>'+
+  '<input type="number" id="n-wt" value="'+state.nWt+'" placeholder="e.g. 1.8" min="0.3" max="6" step="0.01"/>'+
+  '</div>'+
+  '<div class="card"><div class="card-label">Drug</div>'+
+  '<select id="n-drug">'+drugOpts+'</select>'+
+  '<div style="font-size:11px;color:#aaa;margin-top:6px">'+d.indication+'</div>'+
+  '<button id="btn-calc-neo" style="width:100%;padding:12px;background:#185FA5;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:.85rem">Look up dose</button>'+
+  '</div>'+
+  resultBox+
+  '<div class="card" style="margin-top:.85rem"><div class="card-label">Full dose matrix - '+d.name+'</div>'+
+  '<div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:6px;padding:6px 0;border-bottom:2px solid #e5e5e5;font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.4px">'+
+  '<span>GA</span><span>PNA</span><span>Dose / interval</span>'+
+  '</div>'+
+  matrixRows+
+  '</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - Version 1.4</div>'+
+  '</div></div>';
+}
+
 function bindEvents(){
   var s=state.screen;
   var el;
@@ -1707,6 +1881,8 @@ function bindEvents(){
     if(el) el.addEventListener('click',function(){state.screen='ivpo';render();});
     el=document.getElementById('btn-go-inf');
     if(el) el.addEventListener('click',function(){state.screen='infusion';state.iResult=null;render();});
+    el=document.getElementById('btn-go-neo');
+    if(el) el.addEventListener('click',function(){state.screen='neonatal';state.nResult=null;render();});
     el=document.getElementById('btn-go-feedback');
     if(el) el.addEventListener('click',function(){state.fbType='error';state.fbDrug='';state.fbMsg='';state.fbSent=false;state.screen='feedback';render();});
   } else if(s==='result'){
@@ -1836,6 +2012,31 @@ function bindEvents(){
       state.iAmtUnit=d.stdAmtUnit;
       state.iResult=calcInfusion();
       trackEvent('Infusion','calculate',d.name);
+      render();
+    });
+  } else if(s==='neonatal'){
+    el=document.getElementById('btn-back-neo');
+    if(el) el.addEventListener('click',function(){state.screen='home';render();});
+    el=document.getElementById('n-ga');
+    if(el) el.addEventListener('input',function(e){state.nGA=e.target.value;render();});
+    el=document.getElementById('n-pna');
+    if(el) el.addEventListener('input',function(e){state.nPNA=e.target.value;});
+    el=document.getElementById('n-wt');
+    if(el) el.addEventListener('input',function(e){state.nWt=e.target.value;});
+    el=document.getElementById('n-drug');
+    if(el) el.addEventListener('change',function(e){
+      state.nDrug=parseInt(e.target.value)||0;
+      state.nResult=null;
+      render();
+    });
+    el=document.getElementById('btn-calc-neo');
+    if(el) el.addEventListener('click',function(){
+      var ids=['n-ga','n-pna','n-wt'];
+      var keys=['nGA','nPNA','nWt'];
+      for(var k=0;k<ids.length;k++){var x=document.getElementById(ids[k]); if(x) state[keys[k]]=x.value;}
+      state.nResult=lookupNeoDose();
+      var d=NEO_DRUGS[parseInt(state.nDrug)||0];
+      trackEvent('Neonatal','lookup',d.name+' GA'+state.nGA+'/PNA'+state.nPNA);
       render();
     });
   } else if(s==='feedback'){
