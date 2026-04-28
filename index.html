@@ -92,6 +92,35 @@ textarea{resize:vertical}
 button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #185FA5;outline-offset:2px;border-radius:8px}
 .cpill:focus-visible,.rtab:focus-visible,.fbtb:focus-visible,.eq-card:focus-visible{outline:2px solid #185FA5;outline-offset:2px}
 @media(prefers-reduced-motion:reduce){*{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;scroll-behavior:auto !important}}
+/* v1.5: theme overrides (when user picks Light or Dark explicitly) */
+html.theme-light body,html.theme-light #app{background:#f0f4f8;color:#1a1a1a}
+html.theme-light .card,html.theme-light .drug-list,html.theme-light .disc-card,html.theme-light .fbstrip,html.theme-light .stat{background:#fff}
+html.theme-light input,html.theme-light select,html.theme-light textarea{background:#fff;border-color:#e5e5e5;color:#1a1a1a}
+html.theme-light .metric,html.theme-light .icell,html.theme-light .ftrace{background:#f5f5f5}
+html.theme-light .info-strip{background:#f0f6ff;color:#444}
+html.theme-light .remark{background:#EBF5FF}
+html.theme-light .remark-text{color:#0C447C}
+html.theme-dark body,html.theme-dark #app{background:#111;color:#e5e5e5}
+html.theme-dark .card,html.theme-dark .drug-list,html.theme-dark .disc-card,html.theme-dark .fbstrip,html.theme-dark .stat{background:#1c1c1e}
+html.theme-dark input,html.theme-dark select,html.theme-dark textarea{background:#2a2a2a;border-color:#3a3a3a;color:#e5e5e5}
+html.theme-dark .metric,html.theme-dark .icell,html.theme-dark .ftrace{background:#2a2a2a}
+html.theme-dark .info-strip{background:#1a2a3a;color:#ccc}
+html.theme-dark .icell-v,html.theme-dark .metric-v{color:#e5e5e5}
+html.theme-dark .remark{background:#1a2a3a}
+html.theme-dark .remark-text{color:#90CAF9}
+html.theme-dark .dname{color:#e5e5e5}
+html.theme-dark .stats{background:#2a2a2a}
+html.theme-dark .footer{color:#444}
+/* v1.5: RTL admin instruction (Arabic) */
+.remark-text-ar{direction:rtl;text-align:right;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-serif}
+/* v1.5: settings gear button */
+.gear-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:#185FA5;display:flex;align-items:center;justify-content:center}
+.gear-btn:hover{background:rgba(24,95,165,0.08)}
+.seg{display:flex;background:#f5f5f5;border-radius:10px;padding:3px;gap:3px}
+.seg-btn{flex:1;padding:8px 10px;font-size:13px;font-weight:600;border:none;background:none;color:#888;cursor:pointer;font-family:inherit;border-radius:8px;transition:all .15s}
+.seg-btn.active{background:#fff;color:#185FA5;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+html.theme-dark .seg{background:#2a2a2a}
+html.theme-dark .seg-btn.active{background:#1c1c1e;color:#90CAF9}
 @media(prefers-color-scheme:dark){
   body,#app{background:#111;color:#e5e5e5}
   h1,h2{color:#e5e5e5}
@@ -187,6 +216,21 @@ function loadStoredWeight(){
 }
 function storeWeight(w){
   if(w&&!isNaN(parseFloat(w))) _safeSet('pedscalc.wt',w);
+}
+
+/* v1.5: language + theme persistence */
+function loadStoredLang(){var v=_safeGet('pedscalc.lang'); return (v==='ar'||v==='en')?v:'en';}
+function storeLang(v){_safeSet('pedscalc.lang',v);}
+function loadStoredTheme(){var v=_safeGet('pedscalc.theme'); return (v==='light'||v==='dark'||v==='auto')?v:'auto';}
+function storeTheme(v){_safeSet('pedscalc.theme',v);}
+
+/* v1.5: apply theme override by toggling a class on <html> */
+function applyTheme(t){
+  var root=document.documentElement;
+  root.classList.remove('theme-light','theme-dark');
+  if(t==='light') root.classList.add('theme-light');
+  else if(t==='dark') root.classList.add('theme-dark');
+  /* 'auto' = no class, fall through to prefers-color-scheme */
 }
 
 var DRUGS=[
@@ -773,12 +817,16 @@ rEq:"schwartz2009",rWt:"",rHt:"",rAge:"",rSex:"male",rScr:"",rScrUnit:"umol",rRe
 fWt:"",fTemp:"",fNeo:false,fResult:null,
 bWt:"",bHt:"",bResult:null,
 iDrug:0,iWt:"",iRate:"",iAmt:"",iAmtUnit:"",iVol:"",iResult:null,
-nGA:"",nPNA:"",nWt:"",nDrug:0,nResult:null};
+nGA:"",nPNA:"",nWt:"",nDrug:0,nResult:null,
+lang:"en",theme:"auto"};
 
 /* Step 8: hydrate state with persisted values */
 (function(){
   var w=loadStoredWeight();
   if(w){state.wt=w;state.wtConfirmed=w;}
+  state.lang=loadStoredLang();
+  state.theme=loadStoredTheme();
+  applyTheme(state.theme);
 })();
 
 function getCR(name,route){return(CONC_BY_ROUTE[name]&&CONC_BY_ROUTE[name][route])||null;}
@@ -812,6 +860,7 @@ function render(){
   else if(state.screen==='ivpo') app.innerHTML=ivpoHTML();
   else if(state.screen==='infusion') app.innerHTML=infusionHTML();
   else if(state.screen==='neonatal') app.innerHTML=neonatalHTML();
+  else if(state.screen==='settings') app.innerHTML=settingsHTML();
   else if(state.screen==='feedback') app.innerHTML=feedbackHTML();
   /* Step 8: mark all SVGs as decorative for screen readers */
   var svgs=app.querySelectorAll('svg');
@@ -903,10 +952,11 @@ function homeHTML(){
   return '<div>'+
   '<div style="padding:1.5rem 1rem 1rem"><div class="wrap">'+
   '<div style="display:flex;align-items:center;justify-content:space-between">'+
+  '<button id="btn-go-settings" class="gear-btn" aria-label="Settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>'+
   '<div style="flex:1;text-align:center">'+
   '<h1 style="font-size:26px;font-weight:700;letter-spacing:-0.5px">PedsCalc</h1>'+
   '<p style="font-size:11px;color:#aaa;margin-top:3px">SQUH Pharmacy Department</p></div>'+
-  '<span style="font-size:10px;font-weight:600;color:#aaa;background:#e8f2f0;padding:3px 9px;border-radius:20px;flex-shrink:0">v1.4</span>'+
+  '<span style="font-size:10px;font-weight:600;color:#aaa;background:#e8f2f0;padding:3px 9px;border-radius:20px;flex-shrink:0">v1.5</span>'+
   '</div></div></div>'+
   '<div class="wrap">'+
   '<div class="stats">'+
@@ -1013,13 +1063,21 @@ function resultHTML(){
         '<div class="warn">Suppository - select the nearest available size to '+totStr+' mg. Do not cut suppositories.</div>';
     } else {
       var capWarn=isCapped?('<div class="err">Max dose cap applied - dose exceeds '+d.max+' mg.</div>'):'';
+      /* v1.5: Arabic admin instruction */
+      var routeArMap={PO:'\u0639\u0646 \u0637\u0631\u064a\u0642 \u0627\u0644\u0641\u0645',IV:'\u0648\u0631\u064a\u062f\u064a\u0627\u064b',IM:'\u0639\u0636\u0644\u064a\u0627\u064b',SC:'\u062a\u062d\u062a \u0627\u0644\u062c\u0644\u062f',PR:'\u0634\u0631\u062c\u064a\u0627\u064b',Nebulized:'\u0628\u0627\u0644\u0628\u062e\u0627\u062e',Buccal:'\u0639\u0628\u0631 \u0627\u0644\u063a\u0634\u0627\u0621 \u0627\u0644\u0641\u0645\u0648\u064a',IN:'\u0639\u0628\u0631 \u0627\u0644\u0623\u0646\u0641'};
+      var freqArMap={'Every 4-6h (max 5 doses/24h)':'\u0643\u0644 4-6 \u0633\u0627\u0639\u0627\u062a (\u0628\u062d\u062f \u0623\u0642\u0635\u0649 5 \u062c\u0631\u0639\u0627\u062a/24 \u0633\u0627\u0639\u0629)','Every 6-8h':'\u0643\u0644 6-8 \u0633\u0627\u0639\u0627\u062a','Every 8h (TDS)':'\u0643\u0644 8 \u0633\u0627\u0639\u0627\u062a (\u062b\u0644\u0627\u062b \u0645\u0631\u0627\u062a \u064a\u0648\u0645\u064a\u0627\u064b)','Every 12h (BD)':'\u0643\u0644 12 \u0633\u0627\u0639\u0629 (\u0645\u0631\u062a\u064a\u0646 \u064a\u0648\u0645\u064a\u0627\u064b)','Every 6h':'\u0643\u0644 6 \u0633\u0627\u0639\u0627\u062a','Once daily':'\u0645\u0631\u0629 \u0648\u0627\u062d\u062f\u0629 \u064a\u0648\u0645\u064a\u0627\u064b','Every 8h':'\u0643\u0644 8 \u0633\u0627\u0639\u0627\u062a','Every 12h':'\u0643\u0644 12 \u0633\u0627\u0639\u0629','Once daily x3-5 days':'\u0645\u0631\u0629 \u0648\u0627\u062d\u062f\u0629 \u064a\u0648\u0645\u064a\u0627\u064b \u0644\u0645\u062f\u0629 3-5 \u0623\u064a\u0627\u0645'};
+      var routeAr=routeArMap[state.selectedRoute]||routeText(state.selectedRoute);
+      var freqAr=freqArMap[d.freq]||d.freq;
+      var adminEn='<div class="remark-text">Give <strong>'+volStr+' mL</strong> ('+totStr+' mg) <strong>'+d.freq+'</strong> - '+routeText(state.selectedRoute)+'</div>';
+      var adminAr='<div class="remark-text remark-text-ar">\u0627\u0639\u0637\u0650 <strong>'+volStr+' \u0645\u0644</strong> ('+totStr+' \u0645\u063a\u0645) <strong>'+freqAr+'</strong> - '+routeAr+'</div>';
+      var adminBlock=state.lang==='ar'?adminAr:adminEn;
       calcHTML=capWarn+
         '<div class="g2" style="margin-bottom:.75rem">'+
         '<div class="metric"><div class="metric-l">Total dose</div><div class="metric-v">'+totStr+'<span class="metric-u">mg</span></div></div>'+
         '<div class="metric mblue"><div class="metric-l">Volume to give</div><div class="metric-v">'+volStr+'<span class="metric-u">mL</span></div></div></div>'+
         '<div class="ftrace">'+wt.toFixed(1)+' x '+doseStr+' / '+conc+(isCapped?' capped at '+d.max+' mg':'')+'</div>'+
-        '<div class="remark"><div class="remark-lbl">Administration instruction</div>'+
-        '<div class="remark-text">Give <strong>'+volStr+' mL</strong> ('+totStr+' mg) <strong>'+d.freq+'</strong> - '+routeText(state.selectedRoute)+'</div></div>';
+        '<div class="remark"><div class="remark-lbl">Administration instruction'+(state.lang==='ar'?' / \u062a\u0639\u0644\u064a\u0645\u0627\u062a \u0627\u0644\u0625\u0639\u0637\u0627\u0621':'')+'</div>'+
+        adminBlock+'</div>';
     }
   } else {
     calcHTML='<div class="metric" style="text-align:center;color:#bbb;font-size:14px;padding:1.25rem;margin-bottom:.75rem">Enter patient weight above to calculate</div>';
@@ -1853,6 +1911,71 @@ function neonatalHTML(){
   '</div></div>';
 }
 
+/* === SETTINGS SCREEN (v1.5) === */
+function settingsHTML(){
+  var L=state.lang;
+  var T=state.theme;
+  return '<div>'+
+  '<div style="padding:.75rem 1rem .25rem;background:#f0f4f8"><div class="wrap">'+
+  '<button class="ref-btn" id="btn-back-settings" style="color:#185FA5;font-size:13px;font-weight:600;margin-bottom:.5rem">&#8592; Back</button>'+
+  '<h1 style="font-size:20px;font-weight:700;margin-bottom:2px">Settings</h1>'+
+  '<p style="font-size:12px;color:#aaa">Personalise your PedsCalc experience</p>'+
+  '</div></div>'+
+  '<div class="wrap" style="margin-top:.75rem">'+
+
+  /* Language */
+  '<div class="card"><div class="card-label">Language for dose instructions</div>'+
+  '<p style="font-size:11px;color:#888;margin-bottom:.65rem;line-height:1.6">Affects only the administration instruction line on the dose result screen. Drug names, doses, units, and the rest of the interface stay in English.</p>'+
+  '<div class="seg">'+
+  '<button class="seg-btn'+(L==='en'?' active':'')+'" data-lang="en">English</button>'+
+  '<button class="seg-btn'+(L==='ar'?' active':'')+'" data-lang="ar">\u0627\u0644\u0639\u0631\u0628\u064a\u0629</button>'+
+  '</div></div>'+
+
+  /* Theme */
+  '<div class="card"><div class="card-label">Appearance</div>'+
+  '<p style="font-size:11px;color:#888;margin-bottom:.65rem;line-height:1.6">Choose Auto to match your device theme, or pick Light/Dark to override.</p>'+
+  '<div class="seg">'+
+  '<button class="seg-btn'+(T==='auto'?' active':'')+'" data-theme="auto">Auto</button>'+
+  '<button class="seg-btn'+(T==='light'?' active':'')+'" data-theme="light">Light</button>'+
+  '<button class="seg-btn'+(T==='dark'?' active':'')+'" data-theme="dark">Dark</button>'+
+  '</div></div>'+
+
+  /* About */
+  '<div class="card"><div class="card-label">About PedsCalc</div>'+
+  '<div style="font-size:13px;color:#444;line-height:1.7">'+
+  '<p style="margin-bottom:.65rem"><strong>PedsCalc</strong> is a paediatric dose-calculation and clinical decision-support tool, designed for healthcare professionals at <strong>Sultan Qaboos University Hospital</strong>.</p>'+
+  '<p style="margin-bottom:.65rem">It covers weight-based dosing across 38 paediatric drugs, plus dedicated modules for renal dosing, maintenance fluids, BSA / oncology, IV \u2192 PO conversion, IV infusions, and neonatal dosing.</p>'+
+  '<p style="margin-bottom:.65rem">All doses are referenced from internationally accepted paediatric formularies and reviewed sources \u2014 BNFC, Harriet Lane, Taketomo, UpToDate, ONF, WHO EMLc, Neofax, and Nelson.</p>'+
+  '<p style="color:#aaa;font-size:12px;margin-top:.85rem">This tool supports clinical decision-making but does not replace clinical judgement, current institutional guidelines, or qualified pharmacist review.</p>'+
+  '</div></div>'+
+
+  /* Credits */
+  '<div class="card"><div class="card-label">Credits</div>'+
+  '<div style="font-size:13px;color:#444;line-height:1.9">'+
+  '<div style="display:flex;justify-content:space-between"><span style="color:#888">Version</span><strong>1.5 (Settings update)</strong></div>'+
+  '<div style="display:flex;justify-content:space-between"><span style="color:#888">Built by</span><strong>Saeed Al Rassadi</strong></div>'+
+  '<div style="display:flex;justify-content:space-between"><span style="color:#888">For</span><strong>SQUH Pharmacy Department</strong></div>'+
+  '<div style="display:flex;justify-content:space-between"><span style="color:#888">Released</span><strong>April 2026</strong></div>'+
+  '<div style="display:flex;justify-content:space-between;margin-top:.5rem"><span style="color:#888">Contact</span><a href="mailto:rassadi222@gmail.com" style="color:#185FA5;text-decoration:none">rassadi222@gmail.com</a></div>'+
+  '</div></div>'+
+
+  /* References list */
+  '<div class="card"><div class="card-label">References used</div>'+
+  '<div style="font-size:12px;color:#666;line-height:1.8">'+
+  '&bull; <strong>BNFC</strong> - British National Formulary for Children<br>'+
+  '&bull; <strong>Harriet Lane Handbook</strong> (Johns Hopkins)<br>'+
+  '&bull; <strong>Taketomo</strong> - Pediatric & Neonatal Dosage Handbook<br>'+
+  '&bull; <strong>UpToDate</strong> - Lexicomp<br>'+
+  '&bull; <strong>ONF</strong> - Oman National Formulary<br>'+
+  '&bull; <strong>WHO EMLc</strong> - WHO Essential Medicines List for Children<br>'+
+  '&bull; <strong>Neofax</strong> - Micromedex Neonatal<br>'+
+  '&bull; <strong>Nelson</strong> - Textbook of Pediatrics'+
+  '</div></div>'+
+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - Version 1.5</div>'+
+  '</div></div>';
+}
+
 function bindEvents(){
   var s=state.screen;
   var el;
@@ -1921,6 +2044,8 @@ function bindEvents(){
     if(el) el.addEventListener('click',function(){state.screen='neonatal';state.nResult=null;render();});
     el=document.getElementById('btn-go-feedback');
     if(el) el.addEventListener('click',function(){state.fbType='error';state.fbDrug='';state.fbMsg='';state.fbSent=false;state.screen='feedback';render();});
+    el=document.getElementById('btn-go-settings');
+    if(el) el.addEventListener('click',function(){state.screen='settings';render();});
   } else if(s==='result'){
     el=document.getElementById('btn-back');
     if(el) el.addEventListener('click',function(){state.screen='home';render();});
@@ -2086,6 +2211,28 @@ function bindEvents(){
       trackEvent('Neonatal','lookup',d.name+' GA'+state.nGA+'/PNA'+state.nPNA);
       render();
     });
+  } else if(s==='settings'){
+    el=document.getElementById('btn-back-settings');
+    if(el) el.addEventListener('click',function(){state.screen='home';render();});
+    var langBtns=document.querySelectorAll('[data-lang]');
+    for(var li=0;li<langBtns.length;li++){
+      (function(btn){btn.addEventListener('click',function(){
+        state.lang=btn.dataset.lang;
+        storeLang(state.lang);
+        trackEvent('Settings','language',state.lang);
+        render();
+      });})(langBtns[li]);
+    }
+    var themeBtns=document.querySelectorAll('[data-theme]');
+    for(var ti=0;ti<themeBtns.length;ti++){
+      (function(btn){btn.addEventListener('click',function(){
+        state.theme=btn.dataset.theme;
+        storeTheme(state.theme);
+        applyTheme(state.theme);
+        trackEvent('Settings','theme',state.theme);
+        render();
+      });})(themeBtns[ti]);
+    }
   } else if(s==='feedback'){
     el=document.getElementById('btn-back-fb');
     if(el) el.addEventListener('click',function(){state.fbSent=false;state.screen='home';render();});
