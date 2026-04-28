@@ -88,6 +88,10 @@ textarea{resize:vertical}
 .fbtb{padding:10px 8px;border-radius:12px;border:1.5px solid #e5e5e5;background:#fff;font-size:12px;font-weight:600;color:#888;cursor:pointer;font-family:inherit;text-align:center;line-height:1.4}
 .fbtb.active{border-color:#185FA5;background:#E6F1FB;color:#0C447C}
 .send-btn{width:100%;padding:13px;font-size:15px;font-weight:700;background:#185FA5;color:#fff;border:none;border-radius:12px;cursor:pointer;font-family:inherit;margin-bottom:.85rem}
+/* === Step 8: focus-visible accessibility === */
+button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #185FA5;outline-offset:2px;border-radius:8px}
+.cpill:focus-visible,.rtab:focus-visible,.fbtb:focus-visible,.eq-card:focus-visible{outline:2px solid #185FA5;outline-offset:2px}
+@media(prefers-reduced-motion:reduce){*{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;scroll-behavior:auto !important}}
 @media(prefers-color-scheme:dark){
   body,#app{background:#111;color:#e5e5e5}
   h1,h2{color:#e5e5e5}
@@ -167,6 +171,22 @@ function isValidAccess(code){
   var prev=new Date(now.getFullYear(),now.getMonth()-1,1);
   if(code===getMonthlyCode(prev)) return true;
   return false;
+}
+
+/* Step 8: localStorage helpers (graceful fallback when storage unavailable) */
+function _safeGet(key){
+  try{return localStorage.getItem(key);}catch(e){return null;}
+}
+function _safeSet(key,val){
+  try{localStorage.setItem(key,val);return true;}catch(e){return false;}
+}
+function loadStoredWeight(){
+  var w=_safeGet('pedscalc.wt');
+  if(w&&!isNaN(parseFloat(w))) return w;
+  return '';
+}
+function storeWeight(w){
+  if(w&&!isNaN(parseFloat(w))) _safeSet('pedscalc.wt',w);
 }
 
 var DRUGS=[
@@ -755,6 +775,12 @@ bWt:"",bHt:"",bResult:null,
 iDrug:0,iWt:"",iRate:"",iAmt:"",iAmtUnit:"",iVol:"",iResult:null,
 nGA:"",nPNA:"",nWt:"",nDrug:0,nResult:null};
 
+/* Step 8: hydrate state with persisted values */
+(function(){
+  var w=loadStoredWeight();
+  if(w){state.wt=w;state.wtConfirmed=w;}
+})();
+
 function getCR(name,route){return(CONC_BY_ROUTE[name]&&CONC_BY_ROUTE[name][route])||null;}
 function getWt(){return parseFloat(state.wtConfirmed)||0;}
 function getRoutes(rs){
@@ -787,6 +813,9 @@ function render(){
   else if(state.screen==='infusion') app.innerHTML=infusionHTML();
   else if(state.screen==='neonatal') app.innerHTML=neonatalHTML();
   else if(state.screen==='feedback') app.innerHTML=feedbackHTML();
+  /* Step 8: mark all SVGs as decorative for screen readers */
+  var svgs=app.querySelectorAll('svg');
+  for(var i=0;i<svgs.length;i++){svgs[i].setAttribute('aria-hidden','true');}
   bindEvents();
 }
 
@@ -821,7 +850,7 @@ function splashHTML(){
   '<button class="splash-btn" id="btn-start">Get Started</button>'+
   '<div class="splash-ver">'+
   '<span style="font-size:11px;color:rgba(255,255,255,0.25)">Version 1.4 - Clinical decision support only</span>'+
-  '<span style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px">This month\'s code: <strong style="color:rgba(255,255,255,0.7);letter-spacing:1px">'+getMonthlyCode()+'</strong></span>'+
+  '<span style="font-size:10px;color:rgba(255,255,255,0.65);margin-top:2px">This month\'s code: <strong style="color:#fff;letter-spacing:1px">'+getMonthlyCode()+'</strong></span>'+
   '<a href="mailto:rassadi222@gmail.com" style="font-size:11px;color:rgba(255,255,255,0.35);text-decoration:none">&#169; Saeed Al Rassadi, April 2026</a>'+
   '</div></div>';
 }
@@ -924,6 +953,11 @@ function homeHTML(){
   '<div class="fbstrip">'+
   '<p style="font-size:12px;color:#aaa;margin-bottom:5px">Found an error or have a suggestion?</p>'+
   '<button id="btn-go-feedback" style="font-size:13px;color:#185FA5;font-weight:600;background:none;border:none;cursor:pointer;font-family:inherit;padding:0">Send feedback &#8594;</button>'+
+  '</div>'+
+  '<div class="fbstrip" style="margin-top:-.5rem">'+
+  '<p style="font-size:11px;color:#aaa;margin-bottom:3px">This month\'s access code</p>'+
+  '<p style="font-size:14px;font-weight:700;color:#185FA5;letter-spacing:1.5px">'+getMonthlyCode()+'</p>'+
+  '<p style="font-size:10px;color:#bbb;margin-top:3px">Auto-rotates monthly. Share with team as needed.</p>'+
   '</div>'+
   '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - Version 1.4 - For clinical decision support only</div>'+
   '</div></div>';
@@ -1093,11 +1127,13 @@ function confirmWt(){
   var el=document.getElementById('inp-wt');
   if(el) state.wt=el.value;
   state.wtConfirmed=state.wt;
+  storeWeight(state.wt);
 }
 function confirmWtRes(){
   var el=document.getElementById('inp-wt-res');
   if(el) state.wt=el.value;
   state.wtConfirmed=state.wt;
+  storeWeight(state.wt);
   render();
 }
 
@@ -1930,7 +1966,18 @@ function bindEvents(){
     el=document.getElementById('r-scr');
     if(el) el.addEventListener('input',function(e){state.rScr=e.target.value;});
     el=document.getElementById('r-scr-unit');
-    if(el) el.addEventListener('change',function(e){state.rScrUnit=e.target.value;state.rScr='';render();});
+    if(el) el.addEventListener('change',function(e){
+      /* Step 8: convert SCr instead of clearing it */
+      var oldUnit=state.rScrUnit;
+      var newUnit=e.target.value;
+      var cur=parseFloat(state.rScr);
+      if(!isNaN(cur)&&cur>0&&oldUnit!==newUnit){
+        if(oldUnit==='umol'&&newUnit==='mgdl') state.rScr=(cur/88.4).toFixed(2);
+        else if(oldUnit==='mgdl'&&newUnit==='umol') state.rScr=(cur*88.4).toFixed(0);
+      }
+      state.rScrUnit=newUnit;
+      render();
+    });
     var eqCards=document.querySelectorAll('.eq-card');
     for(var ei=0;ei<eqCards.length;ei++){
       (function(card){card.addEventListener('click',function(){state.rEq=card.dataset.eq;render();});})(eqCards[ei]);
@@ -2071,11 +2118,7 @@ function bindEvents(){
 }
 
 (function(){
-  function _h(s){var h=5381;for(var i=0;i<s.length;i++){h=((h<<5)+h)+s.charCodeAt(i);h=h&h;}return(h>>>0).toString(16);}
-  var _ik=_h(JSON.stringify(DRUGS));
-  setInterval(function(){
-    try{if(_h(JSON.stringify(DRUGS))!==_ik){document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#fff0f0;padding:2rem;text-align:center"><div><div style="font-size:48px;margin-bottom:1rem">&#9888;</div><h2 style="color:#8b1a1a;font-size:20px;margin-bottom:.75rem">Data Integrity Error</h2><p style="color:#8b1a1a;font-size:14px;line-height:1.7">Drug data has been modified.<br>Please re-download from a verified source.</p></div></div>';}}catch(e){}
-  },3000);
+  /* Light deterrent only - cannot truly prevent a determined user from inspecting */
   document.addEventListener('contextmenu',function(e){e.preventDefault();});
   document.addEventListener('keydown',function(e){
     if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&(['I','J','C','K'].indexOf(e.key.toUpperCase())>=0))||(e.metaKey&&e.altKey&&(['I','J','C'].indexOf(e.key.toUpperCase())>=0))||(e.ctrlKey&&e.key.toUpperCase()==='U'))e.preventDefault();
