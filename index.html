@@ -751,7 +751,8 @@ var CATS=(function(){var s={},r=[];for(var i=0;i<DRUGS.length;i++){if(!s[DRUGS[i
 var state={screen:"access",wt:"",wtConfirmed:"",age:"",search:"",cat:"All",drug:null,conc:"",concLabel:"",selectedRoute:"",showRefs:false,fbType:"error",fbDrug:"",fbMsg:"",fbSent:false,accessError:false,
 rEq:"schwartz2009",rWt:"",rHt:"",rAge:"",rSex:"male",rScr:"",rScrUnit:"umol",rResult:null,
 fWt:"",fTemp:"",fNeo:false,fResult:null,
-bWt:"",bHt:"",bResult:null};
+bWt:"",bHt:"",bResult:null,
+iDrug:0,iWt:"",iRate:"",iAmt:"",iAmtUnit:"",iVol:"",iResult:null};
 
 function getCR(name,route){return(CONC_BY_ROUTE[name]&&CONC_BY_ROUTE[name][route])||null;}
 function getWt(){return parseFloat(state.wtConfirmed)||0;}
@@ -782,6 +783,7 @@ function render(){
   else if(state.screen==='fluids') app.innerHTML=fluidsHTML();
   else if(state.screen==='bsa') app.innerHTML=bsaHTML();
   else if(state.screen==='ivpo') app.innerHTML=ivpoHTML();
+  else if(state.screen==='infusion') app.innerHTML=infusionHTML();
   else if(state.screen==='feedback') app.innerHTML=feedbackHTML();
   bindEvents();
 }
@@ -894,6 +896,9 @@ function homeHTML(){
   '<button id="btn-go-ivpo" style="padding:12px;background:#FAEEDA;color:#633806;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">'+
   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#633806" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'+
   'IV \u2192 PO</button>'+
+  '<button id="btn-go-inf" style="padding:12px;background:#EEEDFE;color:#3C3489;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;grid-column:span 2">'+
+  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3C3489" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>'+
+  'IV Infusion Calculator</button>'+
   '</div>'+
   '<div class="card"><div class="card-label">Patient</div>'+
   '<div class="g2" style="margin-bottom:.75rem">'+
@@ -1501,6 +1506,143 @@ function ivpoHTML(){
   '</div></div>';
 }
 
+/* === IV INFUSION CALCULATOR (v1.4 Step 5) === */
+/* unitMode: 'mcg/kg/min', 'mcg/kg/h', 'mg/kg/h', 'units/kg/h' */
+var INF_DRUGS=[
+ {name:"Adrenaline (Epinephrine)",unitMode:"mcg/kg/min",lo:0.05,hi:1,typical:0.1,
+  stdAmt:4,stdAmtUnit:"mg",stdVol:50,stdLabel:"4 mg in 50 mL = 80 mcg/mL",
+  note:"Inotrope/vasopressor. Central line preferred. Increase by 0.05 mcg/kg/min increments. Higher doses (>0.3) more vasopressor than inotropic."},
+ {name:"Noradrenaline (Norepinephrine)",unitMode:"mcg/kg/min",lo:0.05,hi:2,typical:0.1,
+  stdAmt:4,stdAmtUnit:"mg",stdVol:50,stdLabel:"4 mg in 50 mL = 80 mcg/mL",
+  note:"First-line vasopressor in septic shock. Central line strongly preferred. Extravasation causes severe tissue necrosis - phentolamine is antidote."},
+ {name:"Dopamine",unitMode:"mcg/kg/min",lo:2,hi:20,typical:5,
+  stdAmt:200,stdAmtUnit:"mg",stdVol:50,stdLabel:"200 mg in 50 mL = 4 mg/mL",
+  note:"Dose-dependent: 2-5 (renal/dopaminergic), 5-10 (beta), >10 (alpha). Renal-dose evidence limited. Central line preferred above 10 mcg/kg/min."},
+ {name:"Dobutamine",unitMode:"mcg/kg/min",lo:2,hi:20,typical:5,
+  stdAmt:250,stdAmtUnit:"mg",stdVol:50,stdLabel:"250 mg in 50 mL = 5 mg/mL",
+  note:"Predominantly beta-1 agonist - inotropic with mild vasodilation. Useful in cold shock. Can be given peripherally."},
+ {name:"Milrinone",unitMode:"mcg/kg/min",lo:0.25,hi:0.75,typical:0.5,
+  stdAmt:10,stdAmtUnit:"mg",stdVol:50,stdLabel:"10 mg in 50 mL = 200 mcg/mL",
+  note:"PDE-3 inhibitor - inodilator. Loading 50 mcg/kg over 15-60 min (often omitted in infants due to hypotension). Reduce in renal impairment."},
+ {name:"Vasopressin",unitMode:"units/kg/h",lo:0.0003,hi:0.002,typical:0.0005,
+  stdAmt:20,stdAmtUnit:"units",stdVol:50,stdLabel:"20 units in 50 mL = 0.4 units/mL",
+  note:"Adjunct in catecholamine-resistant shock. Note units (not mcg). 0.0005 units/kg/h = 0.5 milliunits/kg/h."},
+ {name:"Fentanyl",unitMode:"mcg/kg/h",lo:1,hi:5,typical:2,
+  stdAmt:500,stdAmtUnit:"mcg",stdVol:50,stdLabel:"500 mcg in 50 mL = 10 mcg/mL",
+  note:"Sedation/analgesia. Tolerance develops within 3-5 days. Bolus 1-2 mcg/kg over 3-5 min. Caution in apnoea."},
+ {name:"Morphine",unitMode:"mcg/kg/h",lo:10,hi:40,typical:20,
+  stdAmt:50,stdAmtUnit:"mg",stdVol:50,stdLabel:"50 mg in 50 mL = 1 mg/mL = 1000 mcg/mL",
+  note:"Sedation/analgesia. Active metabolite M6G accumulates in renal failure. Tolerance and withdrawal common after 5-7 days."},
+ {name:"Midazolam",unitMode:"mcg/kg/min",lo:1,hi:4,typical:2,
+  stdAmt:50,stdAmtUnit:"mg",stdVol:50,stdLabel:"50 mg in 50 mL = 1 mg/mL",
+  note:"Sedation. Active metabolite accumulates in renal failure. Tolerance, withdrawal, and delirium common with prolonged use."},
+ {name:"Insulin",unitMode:"units/kg/h",lo:0.05,hi:0.1,typical:0.1,
+  stdAmt:50,stdAmtUnit:"units",stdVol:50,stdLabel:"50 units in 50 mL = 1 unit/mL",
+  note:"DKA: 0.05-0.1 units/kg/h after fluid resuscitation. Hyperkalaemia: 0.1 units/kg + glucose. Hourly glucose monitoring."},
+ {name:"Salbutamol IV",unitMode:"mcg/kg/min",lo:1,hi:5,typical:1,
+  stdAmt:5,stdAmtUnit:"mg",stdVol:50,stdLabel:"5 mg in 50 mL = 100 mcg/mL",
+  note:"Severe acute asthma not responding to nebulisation. Loading bolus 15 mcg/kg over 10 min. Monitor K+, lactate, ECG."},
+ {name:"Aminophylline",unitMode:"mg/kg/h",lo:0.5,hi:1.1,typical:0.9,
+  stdAmt:500,stdAmtUnit:"mg",stdVol:50,stdLabel:"500 mg in 50 mL = 10 mg/mL",
+  note:"Severe asthma. Loading 5 mg/kg over 20 min (omit if on theophylline). TDM: 10-20 mg/L. Narrow therapeutic index."}
+];
+
+function calcInfusion(){
+  var idx=parseInt(state.iDrug)||0;
+  var d=INF_DRUGS[idx];
+  if(!d) return null;
+  var wt=parseFloat(state.iWt)||0;
+  var rate=parseFloat(state.iRate)||0;
+  var amt=parseFloat(state.iAmt)||d.stdAmt;
+  var vol=parseFloat(state.iVol)||d.stdVol;
+  if(wt<=0||rate<=0||amt<=0||vol<=0) return null;
+  /* Convert amount to mcg if needed (mg \u2192 mcg). Units stay as units. */
+  var amtMcg=amt;
+  var amtUnit=state.iAmtUnit||d.stdAmtUnit;
+  if(amtUnit==='mg') amtMcg=amt*1000;
+  /* Concentration per mL */
+  var concPerMl=amtMcg/vol;  /* mcg/mL OR units/mL */
+  /* Convert dose rate to per-hour amount */
+  var amtPerHour=0;
+  if(d.unitMode==='mcg/kg/min'){
+    amtPerHour=rate*wt*60;  /* mcg/h */
+  } else if(d.unitMode==='mcg/kg/h'){
+    amtPerHour=rate*wt;  /* mcg/h */
+  } else if(d.unitMode==='mg/kg/h'){
+    amtPerHour=rate*wt*1000;  /* mg/h \u2192 mcg/h */
+  } else if(d.unitMode==='units/kg/h'){
+    amtPerHour=rate*wt;  /* units/h */
+  }
+  /* mL/hr = (amt needed per hour) / (amt per mL) */
+  var mlPerHr=amtPerHour/concPerMl;
+  return {
+    drugName:d.name,
+    unitMode:d.unitMode,
+    rate:rate,
+    wt:wt,
+    amt:amt,
+    amtUnit:amtUnit,
+    vol:vol,
+    concLabel:d.stdLabel,
+    mlPerHr:mlPerHr.toFixed(2),
+    amtPerHour:amtPerHour,
+    range:d.lo+' - '+d.hi+' '+d.unitMode,
+    inRange:rate>=d.lo&&rate<=d.hi
+  };
+}
+
+function infusionHTML(){
+  var idx=parseInt(state.iDrug)||0;
+  var d=INF_DRUGS[idx];
+  var res=state.iResult;
+  var drugOpts='';
+  for(var i=0;i<INF_DRUGS.length;i++){
+    drugOpts+='<option value="'+i+'"'+(i===idx?' selected':'')+'>'+INF_DRUGS[i].name+'</option>';
+  }
+  var calcBox='';
+  if(res){
+    var rangeWarn=res.inRange?'':'<div class="warn" style="margin-bottom:.75rem">Dose rate is outside the typical range ('+res.range+'). Verify before starting.</div>';
+    calcBox=rangeWarn+
+      '<div class="metric mblue" style="margin-bottom:.5rem">'+
+      '<div class="metric-l">Pump rate</div>'+
+      '<div class="metric-v">'+res.mlPerHr+'<span class="metric-u">mL/h</span></div></div>'+
+      '<div class="ftrace">'+res.wt+' kg \u00d7 '+res.rate+' '+res.unitMode+' \u2192 deliver via '+res.amt+' '+res.amtUnit+' in '+res.vol+' mL</div>'+
+      '<div class="remark"><div class="remark-lbl">Pump setting</div>'+
+      '<div class="remark-text">Set the syringe pump to <strong>'+res.mlPerHr+' mL/h</strong> to deliver <strong>'+res.rate+' '+res.unitMode+'</strong> of '+res.drugName+'.</div></div>';
+  } else {
+    calcBox='<div class="metric" style="text-align:center;color:#bbb;font-size:14px;padding:1.25rem">Fill in fields and tap Calculate</div>';
+  }
+  return '<div>'+
+  '<div style="padding:.75rem 1rem .25rem;background:#f0f4f8"><div class="wrap">'+
+  '<button class="ref-btn" id="btn-back-inf" style="color:#185FA5;font-size:13px;font-weight:600;margin-bottom:.5rem">&#8592; Back</button>'+
+  '<h1 style="font-size:20px;font-weight:700;margin-bottom:2px">IV Infusion Calculator</h1>'+
+  '<p style="font-size:12px;color:#aaa">Continuous infusion rate for paediatric/neonatal critical care</p>'+
+  '</div></div>'+
+  '<div class="wrap" style="margin-top:.75rem">'+
+  '<div class="card"><div class="card-label">Drug</div>'+
+  '<select id="i-drug">'+drugOpts+'</select>'+
+  '<div style="font-size:11px;color:#aaa;margin-top:6px;line-height:1.5">'+
+  'Typical range: <strong style="color:#0C447C">'+d.lo+' - '+d.hi+' '+d.unitMode+'</strong> | Standard mix: '+d.stdLabel+
+  '</div></div>'+
+  '<div class="card"><div class="card-label">Patient & dose</div>'+
+  '<div class="g2" style="margin-bottom:10px">'+
+  '<div><label>Weight (kg)</label><input type="number" id="i-wt" value="'+state.iWt+'" placeholder="e.g. 12" min="0.5" step="0.1"/></div>'+
+  '<div><label>Dose rate ('+d.unitMode+')</label><input type="number" id="i-rate" value="'+(state.iRate||d.typical)+'" placeholder="e.g. '+d.typical+'" min="0" step="0.01"/></div>'+
+  '</div></div>'+
+  '<div class="card"><div class="card-label">Bag / syringe</div>'+
+  '<div class="g2" style="margin-bottom:10px">'+
+  '<div><label>Drug amount ('+d.stdAmtUnit+')</label><input type="number" id="i-amt" value="'+(state.iAmt||d.stdAmt)+'" placeholder="e.g. '+d.stdAmt+'" min="0" step="0.01"/></div>'+
+  '<div><label>Volume (mL)</label><input type="number" id="i-vol" value="'+(state.iVol||d.stdVol)+'" placeholder="e.g. '+d.stdVol+'" min="1" step="1"/></div>'+
+  '</div>'+
+  '<button id="btn-calc-inf" style="width:100%;padding:12px;background:#185FA5;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Calculate pump rate</button>'+
+  '</div>'+
+  calcBox+
+  '<div class="warn" style="margin-top:.85rem">'+d.note+'</div>'+
+  '<div class="warn"><strong>Always double-check infusion calculations independently</strong> before starting. Verify pump settings, drug concentration, and patient weight. Use central line for vasoactive drugs where possible.</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - Version 1.4</div>'+
+  '</div></div>';
+}
+
 function bindEvents(){
   var s=state.screen;
   var el;
@@ -1563,6 +1705,8 @@ function bindEvents(){
     if(el) el.addEventListener('click',function(){state.screen='bsa';state.bResult=null;render();});
     el=document.getElementById('btn-go-ivpo');
     if(el) el.addEventListener('click',function(){state.screen='ivpo';render();});
+    el=document.getElementById('btn-go-inf');
+    if(el) el.addEventListener('click',function(){state.screen='infusion';state.iResult=null;render();});
     el=document.getElementById('btn-go-feedback');
     if(el) el.addEventListener('click',function(){state.fbType='error';state.fbDrug='';state.fbMsg='';state.fbSent=false;state.screen='feedback';render();});
   } else if(s==='result'){
@@ -1666,6 +1810,34 @@ function bindEvents(){
   } else if(s==='ivpo'){
     el=document.getElementById('btn-back-ivpo');
     if(el) el.addEventListener('click',function(){state.screen='home';render();});
+  } else if(s==='infusion'){
+    el=document.getElementById('btn-back-inf');
+    if(el) el.addEventListener('click',function(){state.screen='home';render();});
+    el=document.getElementById('i-drug');
+    if(el) el.addEventListener('change',function(e){
+      state.iDrug=parseInt(e.target.value)||0;
+      state.iRate='';state.iAmt='';state.iVol='';state.iResult=null;
+      render();
+    });
+    el=document.getElementById('i-wt');
+    if(el) el.addEventListener('input',function(e){state.iWt=e.target.value;});
+    el=document.getElementById('i-rate');
+    if(el) el.addEventListener('input',function(e){state.iRate=e.target.value;});
+    el=document.getElementById('i-amt');
+    if(el) el.addEventListener('input',function(e){state.iAmt=e.target.value;});
+    el=document.getElementById('i-vol');
+    if(el) el.addEventListener('input',function(e){state.iVol=e.target.value;});
+    el=document.getElementById('btn-calc-inf');
+    if(el) el.addEventListener('click',function(){
+      var ids=['i-wt','i-rate','i-amt','i-vol'];
+      var keys=['iWt','iRate','iAmt','iVol'];
+      for(var k=0;k<ids.length;k++){var x=document.getElementById(ids[k]); if(x) state[keys[k]]=x.value;}
+      var d=INF_DRUGS[parseInt(state.iDrug)||0];
+      state.iAmtUnit=d.stdAmtUnit;
+      state.iResult=calcInfusion();
+      trackEvent('Infusion','calculate',d.name);
+      render();
+    });
   } else if(s==='feedback'){
     el=document.getElementById('btn-back-fb');
     if(el) el.addEventListener('click',function(){state.fbSent=false;state.screen='home';render();});
