@@ -781,6 +781,7 @@ function render(){
   else if(state.screen==='renal') app.innerHTML=renalHTML();
   else if(state.screen==='fluids') app.innerHTML=fluidsHTML();
   else if(state.screen==='bsa') app.innerHTML=bsaHTML();
+  else if(state.screen==='ivpo') app.innerHTML=ivpoHTML();
   else if(state.screen==='feedback') app.innerHTML=feedbackHTML();
   bindEvents();
 }
@@ -887,9 +888,12 @@ function homeHTML(){
   '<button id="btn-go-fluids" style="padding:12px;background:#E1F5EE;color:#085041;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">'+
   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#085041" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 5 14a7 7 0 1 0 14 0Z"/></svg>'+
   'Maintenance Fluids</button>'+
-  '<button id="btn-go-bsa" style="padding:12px;background:#FBE9E7;color:#BF360C;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;grid-column:span 2">'+
+  '<button id="btn-go-bsa" style="padding:12px;background:#FBE9E7;color:#BF360C;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">'+
   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#BF360C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg>'+
-  'BSA / Chemo Reference</button>'+
+  'BSA / Chemo</button>'+
+  '<button id="btn-go-ivpo" style="padding:12px;background:#FAEEDA;color:#633806;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">'+
+  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#633806" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'+
+  'IV \u2192 PO</button>'+
   '</div>'+
   '<div class="card"><div class="card-label">Patient</div>'+
   '<div class="g2" style="margin-bottom:.75rem">'+
@@ -1436,6 +1440,67 @@ function bsaHTML(){
   '</div></div>';
 }
 
+/* === IV \u2192 PO CONVERSION GUIDE (v1.4 Step 4) === */
+var IVPO_DRUGS=[
+  {name:"Amoxicillin / Ampicillin",iv:"Ampicillin 50 mg/kg every 6h IV",po:"Amoxicillin 25-45 mg/kg/day div TDS PO",bioavail:"Amox 74-92%",bioavailTier:"high",ratio:"Switch IV ampicillin \u2192 PO amoxicillin",note:"Preferred switch: amoxicillin has much better oral absorption than oral ampicillin. Excellent step-down for community-acquired pneumonia."},
+  {name:"Ciprofloxacin",iv:"10 mg/kg every 12h IV",po:"15-20 mg/kg every 12h PO",bioavail:"70-80%",bioavailTier:"med",ratio:"PO dose \u2248 1.5\u00d7 IV",note:"Avoid co-administration with dairy, calcium, iron, or antacids - reduces absorption by up to 50%."},
+  {name:"Clindamycin",iv:"10 mg/kg every 8h IV",po:"10 mg/kg every 8h PO",bioavail:"~90%",bioavailTier:"high",ratio:"1:1",note:"Excellent oral bioavailability. Highest C. difficile risk among common oral antibiotics. Bitter taste - mask suspension with juice."},
+  {name:"Co-trimoxazole",iv:"5-10 mg/kg/day TMP IV div BD",po:"5-10 mg/kg/day TMP PO div BD",bioavail:"~100%",bioavailTier:"high",ratio:"1:1",note:"Excellent oral bioavailability. Suspension 40 mg TMP / 200 mg SMX per 5 mL widely available in Oman."},
+  {name:"Fluconazole",iv:"6-12 mg/kg OD IV",po:"6-12 mg/kg OD PO",bioavail:">90%",bioavailTier:"high",ratio:"1:1",note:"Excellent oral bioavailability. Switch as soon as patient tolerating oral. Loading dose unchanged."},
+  {name:"Linezolid",iv:"10 mg/kg every 8h IV",po:"10 mg/kg every 8h PO",bioavail:"~100%",bioavailTier:"high",ratio:"1:1",note:"100% oral bioavailability. High cost - reserve for resistant gram-positive infections. Monitor CBC weekly (thrombocytopenia)."},
+  {name:"Levofloxacin",iv:"10 mg/kg OD or BD IV",po:"10 mg/kg OD or BD PO",bioavail:"~99%",bioavailTier:"high",ratio:"1:1",note:"Excellent oral bioavailability. Same divalent-cation interactions as ciprofloxacin (avoid dairy, iron, antacids)."},
+  {name:"Metronidazole",iv:"7.5-10 mg/kg every 8h IV",po:"7.5-10 mg/kg every 8h PO",bioavail:"~100%",bioavailTier:"high",ratio:"1:1",note:"Excellent oral bioavailability. Avoid alcohol during and 48h after course (disulfiram-like reaction)."},
+  {name:"Acyclovir / Valacyclovir",iv:"10-20 mg/kg every 8h IV",po:"Acyclovir 20 mg/kg every 6h PO; or valacyclovir BD/TDS",bioavail:"Acyclovir 15-30%; Valacyclovir 54%",bioavailTier:"low",ratio:"Switch IV \u2192 PO acyclovir 4-6\u00d7 daily, OR valacyclovir BD/TDS",note:"Oral acyclovir poorly absorbed. Valacyclovir (prodrug) preferred where available. NOT for CNS / neonatal HSV - keep IV."},
+  {name:"Paracetamol",iv:"15 mg/kg every 6h IV",po:"15 mg/kg every 4-6h PO",bioavail:"63-89%",bioavailTier:"med",ratio:"1:1",note:"IV expensive - switch to oral as soon as tolerated. Rectal route alternative if oral not possible (more erratic absorption)."},
+  {name:"Azithromycin",iv:"10 mg/kg OD IV",po:"10 mg/kg day 1, then 5 mg/kg days 2-5 PO",bioavail:"~38%",bioavailTier:"low",ratio:"Switch readily despite low oral bioavailability",note:"Tissue concentrations remain high regardless of route due to massive tissue accumulation. Switch as soon as tolerating oral."}
+];
+
+function ivpoHTML(){
+  var rows='';
+  var tierColor={high:{bg:'#E1F5EE',tx:'#085041'},med:{bg:'#FBE9E7',tx:'#BF360C'},low:{bg:'#fff0f0',tx:'#8b1a1a'}};
+  for(var i=0;i<IVPO_DRUGS.length;i++){
+    var d=IVPO_DRUGS[i];
+    var col=tierColor[d.bioavailTier]||tierColor.med;
+    rows+='<div class="ref-block" style="padding:.85rem 0">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">'+
+      '<span style="font-size:14px;font-weight:700;color:#1a1a1a">'+d.name+'</span>'+
+      '<span class="pill" style="background:'+col.bg+';color:'+col.tx+'">'+d.bioavail+'</span>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:12px;line-height:1.6;margin-bottom:6px">'+
+      '<span style="color:#aaa;font-weight:600">IV</span><span style="color:#444">'+d.iv+'</span>'+
+      '<span style="color:#aaa;font-weight:600">PO</span><span style="color:#444">'+d.po+'</span>'+
+      '<span style="color:#aaa;font-weight:600">Ratio</span><span style="color:#0C447C;font-weight:600">'+d.ratio+'</span>'+
+      '</div>'+
+      '<div class="ref-note">'+d.note+'</div></div>';
+  }
+  return '<div>'+
+  '<div style="padding:.75rem 1rem .25rem;background:#f0f4f8"><div class="wrap">'+
+  '<button class="ref-btn" id="btn-back-ivpo" style="color:#185FA5;font-size:13px;font-weight:600;margin-bottom:.5rem">&#8592; Back</button>'+
+  '<h1 style="font-size:20px;font-weight:700;margin-bottom:2px">IV \u2192 PO Conversion</h1>'+
+  '<p style="font-size:12px;color:#aaa">Switch therapy guide for paediatric inpatients</p>'+
+  '</div></div>'+
+  '<div class="wrap" style="margin-top:.75rem">'+
+  '<div class="card"><div class="card-label">Switch criteria (all should apply)</div>'+
+  '<div style="font-size:13px;color:#444;line-height:1.9">'+
+  '&#10003; Clinically stable, improving<br>'+
+  '&#10003; Tolerating oral fluids/feeds<br>'+
+  '&#10003; No malabsorption (vomiting, severe diarrhoea, ileus)<br>'+
+  '&#10003; Afebrile or trending down for 24-48h<br>'+
+  '&#10003; No IV-only indication remaining (e.g., meningitis, endocarditis, severe sepsis, deep abscess)<br>'+
+  '&#10003; Functional GI tract and reliable enteral access'+
+  '</div></div>'+
+  '<div class="card">'+
+  '<div class="card-label">Common conversions</div>'+
+  '<div style="font-size:11px;color:#aaa;margin-bottom:.5rem">Pill colour reflects oral bioavailability: '+
+  '<span class="pill" style="background:#E1F5EE;color:#085041">high \u2265 80%</span> '+
+  '<span class="pill" style="background:#FBE9E7;color:#BF360C">moderate</span> '+
+  '<span class="pill" style="background:#fff0f0;color:#8b1a1a">low &lt; 50%</span></div>'+
+  rows+'</div>'+
+  '<div class="warn" style="margin-top:.85rem">Always verify the proposed switch against current local antimicrobial guidelines and the patient\'s clinical trajectory. Reduces line-related infections, hospital length of stay, and cost. Avoid switching in deep-seated or CNS infections.</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - Version 1.4</div>'+
+  '</div></div>';
+}
+
 function bindEvents(){
   var s=state.screen;
   var el;
@@ -1496,6 +1561,8 @@ function bindEvents(){
     if(el) el.addEventListener('click',function(){state.screen='fluids';state.fResult=null;render();});
     el=document.getElementById('btn-go-bsa');
     if(el) el.addEventListener('click',function(){state.screen='bsa';state.bResult=null;render();});
+    el=document.getElementById('btn-go-ivpo');
+    if(el) el.addEventListener('click',function(){state.screen='ivpo';render();});
     el=document.getElementById('btn-go-feedback');
     if(el) el.addEventListener('click',function(){state.fbType='error';state.fbDrug='';state.fbMsg='';state.fbSent=false;state.screen='feedback';render();});
   } else if(s==='result'){
@@ -1596,6 +1663,9 @@ function bindEvents(){
       trackEvent('BSA','calculate',state.bWt+'kg/'+state.bHt+'cm');
       render();
     });
+  } else if(s==='ivpo'){
+    el=document.getElementById('btn-back-ivpo');
+    if(el) el.addEventListener('click',function(){state.screen='home';render();});
   } else if(s==='feedback'){
     el=document.getElementById('btn-back-fb');
     if(el) el.addEventListener('click',function(){state.fbSent=false;state.screen='home';render();});
