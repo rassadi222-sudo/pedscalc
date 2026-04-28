@@ -750,7 +750,8 @@ var CATS=(function(){var s={},r=[];for(var i=0;i<DRUGS.length;i++){if(!s[DRUGS[i
 
 var state={screen:"access",wt:"",wtConfirmed:"",age:"",search:"",cat:"All",drug:null,conc:"",concLabel:"",selectedRoute:"",showRefs:false,fbType:"error",fbDrug:"",fbMsg:"",fbSent:false,accessError:false,
 rEq:"schwartz2009",rWt:"",rHt:"",rAge:"",rSex:"male",rScr:"",rScrUnit:"umol",rResult:null,
-fWt:"",fTemp:"",fNeo:false,fResult:null};
+fWt:"",fTemp:"",fNeo:false,fResult:null,
+bWt:"",bHt:"",bResult:null};
 
 function getCR(name,route){return(CONC_BY_ROUTE[name]&&CONC_BY_ROUTE[name][route])||null;}
 function getWt(){return parseFloat(state.wtConfirmed)||0;}
@@ -779,6 +780,7 @@ function render(){
   else if(state.screen==='result') app.innerHTML=resultHTML();
   else if(state.screen==='renal') app.innerHTML=renalHTML();
   else if(state.screen==='fluids') app.innerHTML=fluidsHTML();
+  else if(state.screen==='bsa') app.innerHTML=bsaHTML();
   else if(state.screen==='feedback') app.innerHTML=feedbackHTML();
   bindEvents();
 }
@@ -885,6 +887,9 @@ function homeHTML(){
   '<button id="btn-go-fluids" style="padding:12px;background:#E1F5EE;color:#085041;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">'+
   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#085041" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 5 14a7 7 0 1 0 14 0Z"/></svg>'+
   'Maintenance Fluids</button>'+
+  '<button id="btn-go-bsa" style="padding:12px;background:#FBE9E7;color:#BF360C;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;grid-column:span 2">'+
+  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#BF360C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg>'+
+  'BSA / Chemo Reference</button>'+
   '</div>'+
   '<div class="card"><div class="card-label">Patient</div>'+
   '<div class="g2" style="margin-bottom:.75rem">'+
@@ -1326,6 +1331,111 @@ function fluidsHTML(){
   '</div></div>';
 }
 
+/* === BSA + CHEMO REFERENCE (v1.4 Step 3) === */
+var CHEMO_DRUGS=[
+  {name:"Vincristine",dose:"1.5 mg/m\u00b2",mgPerM2:1.5,maxDose:2,unit:"mg",
+   note:"Hard cap 2 mg per dose regardless of BSA. NEVER intrathecal - fatal. Vesicant."},
+  {name:"Methotrexate (IV high-dose)",dose:"1-12 g/m\u00b2",mgPerM2:5000,maxDose:null,unit:"mg",
+   variableDose:true,
+   note:"HIGHLY protocol-specific (e.g., COG ALL: 5 g/m\u00b2). Requires hyperhydration, urine alkalinisation, leucovorin rescue, TDM."},
+  {name:"Methotrexate (intrathecal)",dose:"AGE-based, NOT BSA",mgPerM2:0,maxDose:null,unit:"mg",
+   ageBased:true,
+   note:"under 1 yr: 6 mg | 1-2 yr: 8 mg | 2-3 yr: 10 mg | 3 yr+: 12 mg. NEVER calculate by BSA - fatal overdose risk."},
+  {name:"Cyclophosphamide",dose:"500-1500 mg/m\u00b2",mgPerM2:1000,maxDose:null,unit:"mg",
+   variableDose:true,
+   note:"Mesna prophylaxis for haemorrhagic cystitis at higher doses. Adequate hydration mandatory."},
+  {name:"Cytarabine (standard)",dose:"100-200 mg/m\u00b2/day",mgPerM2:150,maxDose:null,unit:"mg",
+   variableDose:true,
+   note:"Continuous infusion or every 12h depending on protocol. High-dose: corticosteroid eye drops."},
+  {name:"Doxorubicin",dose:"25-75 mg/m\u00b2",mgPerM2:50,maxDose:null,unit:"mg",
+   variableDose:true,
+   note:"Cumulative lifetime max 300-450 mg/m\u00b2 to limit cardiotoxicity. ECHO before each course. Vesicant."},
+  {name:"6-Mercaptopurine (PO)",dose:"50-75 mg/m\u00b2/day",mgPerM2:60,maxDose:null,unit:"mg",
+   variableDose:true,
+   note:"ALL maintenance. Reduce dose if TPMT-deficient. Avoid co-administration with allopurinol."},
+  {name:"L-Asparaginase",dose:"6000 IU/m\u00b2 IM",mgPerM2:6000,maxDose:null,unit:"IU",
+   note:"E. coli or Erwinia preparation - protocol-specific. Risk of pancreatitis, hyperglycaemia, coagulopathy, anaphylaxis."}
+];
+
+function calcBSA(){
+  var wt=parseFloat(state.bWt)||0;
+  var ht=parseFloat(state.bHt)||0;
+  if(wt<=0||ht<=0) return null;
+  var bsa=Math.sqrt((ht*wt)/3600);
+  return {
+    bsa:bsa.toFixed(2),
+    bsaRaw:bsa,
+    formula:'\u221a('+ht+' \u00d7 '+wt+' / 3600)'
+  };
+}
+
+function bsaHTML(){
+  var res=state.bResult;
+  var calcBox='';
+  var chemoBox='';
+  if(res){
+    calcBox='<div class="metric mblue" style="margin-bottom:.5rem">'+
+      '<div class="metric-l">Body surface area (Mosteller)</div>'+
+      '<div class="metric-v">'+res.bsa+'<span class="metric-u">m\u00b2</span></div></div>'+
+      '<div class="ftrace">'+res.formula+' = '+res.bsa+' m\u00b2</div>';
+    /* Build chemo reference rows */
+    var rows='';
+    for(var i=0;i<CHEMO_DRUGS.length;i++){
+      var c=CHEMO_DRUGS[i];
+      var calcLine='';
+      if(c.ageBased){
+        calcLine='<span style="color:#791F1F;font-weight:700">Age-based dosing - see note</span>';
+      } else if(c.variableDose){
+        var lo=Math.round(c.mgPerM2*0.5*res.bsaRaw);
+        var hi=Math.round(c.mgPerM2*1.5*res.bsaRaw);
+        calcLine='Range: <strong>'+lo+'-'+hi+' '+c.unit+'</strong> for this BSA (verify with protocol)';
+      } else {
+        var calc=c.mgPerM2*res.bsaRaw;
+        var calcShown=calc.toFixed(calc<10?2:1);
+        if(c.maxDose&&calc>c.maxDose){
+          calcLine='<strong>'+c.maxDose+' '+c.unit+'</strong> (capped from '+calcShown+' '+c.unit+')';
+        } else {
+          calcLine='<strong>'+calcShown+' '+c.unit+'</strong>';
+        }
+      }
+      rows+='<div class="ref-block">'+
+        '<div class="ref-top"><span class="ref-k">'+c.name+'</span><span class="ref-dose">'+c.dose+'</span></div>'+
+        '<div style="font-size:13px;color:#0C447C;margin:4px 0 4px">'+calcLine+'</div>'+
+        '<div class="ref-note">'+c.note+'</div></div>';
+    }
+    chemoBox='<div class="card" style="margin-top:.85rem">'+
+      '<div class="card-label">Chemo reference doses for BSA '+res.bsa+' m\u00b2</div>'+
+      '<div style="font-size:11px;color:#aaa;margin-bottom:.5rem">Reference only - always verify against current oncology protocol</div>'+
+      rows+'</div>';
+  } else {
+    calcBox='<div class="metric" style="text-align:center;color:#bbb;font-size:14px;padding:1.25rem">Enter weight and height, then tap Calculate</div>';
+  }
+  return '<div>'+
+  '<div style="padding:.75rem 1rem .25rem;background:#f0f4f8"><div class="wrap">'+
+  '<button class="ref-btn" id="btn-back-bsa" style="color:#185FA5;font-size:13px;font-weight:600;margin-bottom:.5rem">&#8592; Back</button>'+
+  '<h1 style="font-size:20px;font-weight:700;margin-bottom:2px">BSA / Chemo Reference</h1>'+
+  '<p style="font-size:12px;color:#aaa">Body surface area (Mosteller) for paediatric oncology dosing</p>'+
+  '</div></div>'+
+  '<div class="wrap" style="margin-top:.75rem">'+
+  '<div class="warn" style="margin-bottom:.85rem"><strong>Chemotherapy doses MUST be verified</strong> against the current institutional oncology protocol. This calculator is for BSA estimation and reference only - it does NOT replace the chemotherapy prescribing process.</div>'+
+  '<div class="card"><div class="card-label">Patient</div>'+
+  '<div class="g2" style="margin-bottom:10px">'+
+  '<div><label>Weight (kg)</label><input type="number" id="b-wt" value="'+state.bWt+'" placeholder="e.g. 25" min="0.5" step="0.1"/></div>'+
+  '<div><label>Height (cm)</label><input type="number" id="b-ht" value="'+state.bHt+'" placeholder="e.g. 120" min="30" step="0.5"/></div>'+
+  '</div>'+
+  '<button id="btn-calc-bsa" style="width:100%;padding:12px;background:#185FA5;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Calculate BSA</button>'+
+  '</div>'+
+  calcBox+
+  chemoBox+
+  '<div class="card" style="margin-top:.85rem"><div class="card-label">Mosteller formula</div>'+
+  '<div style="font-size:12px;color:#666;line-height:1.8">'+
+  'BSA (m\u00b2) = \u221a (height [cm] \u00d7 weight [kg] / 3600)<br>'+
+  '<span style="color:#aaa">Ref: Mosteller RD. N Engl J Med 1987;317(17):1098. Most widely used paediatric formula; closely matches Du Bois.</span>'+
+  '</div></div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - Version 1.4</div>'+
+  '</div></div>';
+}
+
 function bindEvents(){
   var s=state.screen;
   var el;
@@ -1384,6 +1494,8 @@ function bindEvents(){
     if(el) el.addEventListener('click',function(){state.screen='renal';state.rResult=null;render();});
     el=document.getElementById('btn-go-fluids');
     if(el) el.addEventListener('click',function(){state.screen='fluids';state.fResult=null;render();});
+    el=document.getElementById('btn-go-bsa');
+    if(el) el.addEventListener('click',function(){state.screen='bsa';state.bResult=null;render();});
     el=document.getElementById('btn-go-feedback');
     if(el) el.addEventListener('click',function(){state.fbType='error';state.fbDrug='';state.fbMsg='';state.fbSent=false;state.screen='feedback';render();});
   } else if(s==='result'){
@@ -1467,6 +1579,21 @@ function bindEvents(){
       var n=document.getElementById('f-neo'); if(n) state.fNeo=n.checked;
       state.fResult=calcFluids();
       trackEvent('Fluids','calculate',state.fWt+'kg');
+      render();
+    });
+  } else if(s==='bsa'){
+    el=document.getElementById('btn-back-bsa');
+    if(el) el.addEventListener('click',function(){state.screen='home';render();});
+    el=document.getElementById('b-wt');
+    if(el) el.addEventListener('input',function(e){state.bWt=e.target.value;});
+    el=document.getElementById('b-ht');
+    if(el) el.addEventListener('input',function(e){state.bHt=e.target.value;});
+    el=document.getElementById('btn-calc-bsa');
+    if(el) el.addEventListener('click',function(){
+      var w=document.getElementById('b-wt'); if(w) state.bWt=w.value;
+      var h=document.getElementById('b-ht'); if(h) state.bHt=h.value;
+      state.bResult=calcBSA();
+      trackEvent('BSA','calculate',state.bWt+'kg/'+state.bHt+'cm');
       render();
     });
   } else if(s==='feedback'){
