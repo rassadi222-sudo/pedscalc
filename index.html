@@ -2,8 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>PharmaCalc v1.6 · Saeed Al Rassadi</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>PharmaCalc v1.7 · Saeed Al Rassadi</title>
+<!-- PWA wiring (v1.7) -->
+<link rel="manifest" href="manifest.webmanifest"/>
+<meta name="theme-color" content="#185FA5"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Pharma"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png"/>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-PF4NHVG8D7"></script>
 <script>
 window.dataLayer=window.dataLayer||[];
@@ -214,7 +223,7 @@ html.theme-dark .seg-btn.active{background:#1c1c1e;color:#90CAF9}
 <div id="app"></div>
 <script>
 /* =====================================================
-   PharmaCalc v1.6
+   PharmaCalc v1.7
    (c) Saeed Al Rassadi, April 2026
    v1.6 changes:
      - Renamed PedsCalc \u2192 PharmaCalc (umbrella platform)
@@ -953,7 +962,7 @@ function splashHTML(){
   '</div>'+
   '<button class="splash-btn" id="btn-start">Get Started</button>'+
   '<div class="splash-ver">'+
-  '<span style="font-size:11px;color:rgba(255,255,255,0.25)">Version 1.6 - Clinical decision support only</span>'+
+  '<span style="font-size:11px;color:rgba(255,255,255,0.25)">Version 1.7 - Clinical decision support only</span>'+
   '<span style="font-size:10px;color:rgba(255,255,255,0.65);margin-top:2px">This month\'s code: <strong style="color:#fff;letter-spacing:1px">'+getMonthlyCode()+'</strong></span>'+
   '<a href="mailto:rassadi222@gmail.com" style="font-size:11px;color:rgba(255,255,255,0.35);text-decoration:none">&#169; Saeed Al Rassadi, April 2026</a>'+
   '</div></div>';
@@ -1075,7 +1084,7 @@ function homeHTML(){
   '<p style="font-size:14px;font-weight:700;color:#185FA5;letter-spacing:1.5px">'+getMonthlyCode()+'</p>'+
   '<p style="font-size:10px;color:#bbb;margin-top:3px">Auto-rotates monthly. Share with team as needed.</p>'+
   '</div>'+
-  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.6 - For clinical decision support only</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.7 - For clinical decision support only</div>'+
   '</div></div>';
 }
 
@@ -1185,7 +1194,7 @@ function resultHTML(){
   '<p style="font-size:12px;color:#aaa;margin-bottom:5px">Found an error or have a suggestion?</p>'+
   '<button id="btn-go-feedback-res" style="font-size:13px;color:#185FA5;font-weight:600;background:none;border:none;cursor:pointer;font-family:inherit;padding:0">Send feedback &#8594;</button>'+
   '</div>'+
-  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.6</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.7</div>'+
   '</div></div>';
 }
 
@@ -1243,7 +1252,7 @@ function feedbackHTML(){
   '<p style="font-size:12px;color:#aaa;margin-bottom:4px">Or email directly</p>'+
   '<a href="mailto:rassadi222@gmail.com?subject=PharmaCalc Feedback" style="font-size:13px;color:#185FA5;font-weight:600;text-decoration:none">rassadi222@gmail.com</a>'+
   '</div>'+
-  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.6</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.7</div>'+
   '</div></div>';
 }
 
@@ -1415,7 +1424,7 @@ function renalHTML(){
   '</div>'+
   resultHTML+
   '<div class="warn" style="margin-bottom:.85rem">CrCl estimates are approximations. Always use clinical judgment and TDM for critical drugs. Values may be less accurate in neonates, severe malnutrition, or acute kidney injury.</div>'+
-  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.6</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.7</div>'+
   '</div></div>';
 }
 
@@ -1501,7 +1510,7 @@ function fluidsHTML(){
   '<span style="color:#aaa">Ref: Holliday MA, Segar WE. Pediatrics 1957;19(5):823-32</span>'+
   '</div></div>'+
   '<div class="warn" style="margin-top:.85rem"><strong>Restrict fluids</strong> in heart failure, SIADH, raised ICP, renal failure, or post-operative period. Use <strong>isotonic</strong> maintenance fluids (e.g., 0.9% NaCl + 5% dextrose) - NICE 2015 / NHS Improvement guidance. Hypotonic fluids increase hyponatraemia risk.</div>'+
-  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.6</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.7</div>'+
   '</div></div>';
 }
 
@@ -1606,7 +1615,7 @@ function bsaHTML(){
   'BSA (m\u00b2) = \u221a (height [cm] \u00d7 weight [kg] / 3600)<br>'+
   '<span style="color:#aaa">Ref: Mosteller RD. N Engl J Med 1987;317(17):1098. Most widely used paediatric formula; closely matches Du Bois.</span>'+
   '</div></div>'+
-  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.6</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.7</div>'+
   '</div></div>';
 }
 
@@ -1667,7 +1676,7 @@ function ivpoHTML(){
   '<span class="pill" style="background:#fff0f0;color:#8b1a1a">low &lt; 50%</span></div>'+
   rows+'</div>'+
   '<div class="warn" style="margin-top:.85rem">Always verify the proposed switch against current local antimicrobial guidelines and the patient\'s clinical trajectory. Reduces line-related infections, hospital length of stay, and cost. Avoid switching in deep-seated or CNS infections.</div>'+
-  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.6</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.7</div>'+
   '</div></div>';
 }
 
@@ -1804,7 +1813,7 @@ function infusionHTML(){
   calcBox+
   '<div class="warn" style="margin-top:.85rem">'+d.note+'</div>'+
   '<div class="warn"><strong>Always double-check infusion calculations independently</strong> before starting. Verify pump settings, drug concentration, and patient weight. Use central line for vasoactive drugs where possible.</div>'+
-  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.6</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.7</div>'+
   '</div></div>';
 }
 
@@ -1973,11 +1982,54 @@ function neonatalHTML(){
   '</div>'+
   matrixRows+
   '</div>'+
-  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.6</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.7</div>'+
   '</div></div>';
 }
 
 /* === SETTINGS SCREEN (v1.5) === */
+/* v1.7: install card helper */
+function isStandaloneMode(){
+  return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)
+    || window.navigator.standalone===true;
+}
+function isIOS(){
+  var ua=navigator.userAgent||'';
+  return /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+}
+function installCardHTML(){
+  /* Already installed - confirm to user, no action needed */
+  if(isStandaloneMode()){
+    return '<div class="card" style="border-left:4px solid #1D9E75">'+
+      '<div class="card-label">Installed</div>'+
+      '<p style="font-size:13px;color:#444;line-height:1.6">PharmaCalc is running as an installed app. You can open it from your home screen.</p>'+
+      '</div>';
+  }
+  /* Android / Chromium / Edge - native prompt available */
+  if(window.deferredPrompt){
+    return '<div class="card" style="border-left:4px solid #185FA5">'+
+      '<div class="card-label">Install PharmaCalc</div>'+
+      '<p style="font-size:13px;color:#444;line-height:1.6;margin-bottom:.75rem">Add PharmaCalc to your device home screen for one-tap access and offline use.</p>'+
+      '<button id="btn-pwa-install" style="width:100%;padding:12px;background:#185FA5;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px">'+
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>'+
+      'Install on this device</button>'+
+      '</div>';
+  }
+  /* iOS Safari - manual instructions */
+  if(isIOS()){
+    return '<div class="card" style="border-left:4px solid #185FA5">'+
+      '<div class="card-label">Install PharmaCalc</div>'+
+      '<p style="font-size:13px;color:#444;line-height:1.6;margin-bottom:.5rem">To install on iPhone or iPad:</p>'+
+      '<ol style="font-size:13px;color:#444;line-height:1.8;padding-left:1.25rem;margin:0">'+
+      '<li>Tap the <strong>Share</strong> button in Safari</li>'+
+      '<li>Scroll down and tap <strong>Add to Home Screen</strong></li>'+
+      '<li>Tap <strong>Add</strong> in the top-right</li>'+
+      '</ol>'+
+      '</div>';
+  }
+  /* Other browsers / not yet installable - hide the card */
+  return '';
+}
+
 function settingsHTML(){
   var L=state.lang;
   var T=state.theme;
@@ -1988,6 +2040,9 @@ function settingsHTML(){
   '<p style="font-size:12px;color:#aaa">Personalise your PharmaCalc experience</p>'+
   '</div></div>'+
   '<div class="wrap" style="margin-top:.75rem">'+
+
+  /* Install app (v1.7 PWA) - shown only when installable, or with iOS instructions */
+  installCardHTML()+
 
   /* Language */
   '<div class="card"><div class="card-label">Language for dose instructions</div>'+
@@ -2018,7 +2073,7 @@ function settingsHTML(){
   /* Credits */
   '<div class="card"><div class="card-label">Credits</div>'+
   '<div style="font-size:13px;color:#444;line-height:1.9">'+
-  '<div style="display:flex;justify-content:space-between"><span style="color:#888">Version</span><strong>1.6 (PharmaCalc shell)</strong></div>'+
+  '<div style="display:flex;justify-content:space-between"><span style="color:#888">Version</span><strong>1.7 (PWA enabled)</strong></div>'+
   '<div style="display:flex;justify-content:space-between"><span style="color:#888">Built by</span><strong>Saeed Al Rassadi</strong></div>'+
   '<div style="display:flex;justify-content:space-between"><span style="color:#888">For</span><strong>SQUH Pharmacy Department</strong></div>'+
   '<div style="display:flex;justify-content:space-between"><span style="color:#888">Released</span><strong>April 2026</strong></div>'+
@@ -2038,7 +2093,7 @@ function settingsHTML(){
   '&bull; <strong>Nelson</strong> - Textbook of Pediatrics'+
   '</div></div>'+
 
-  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.6</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.7</div>'+
   '</div></div>';
 }
 
@@ -2072,7 +2127,7 @@ function modulesHTML(){
   '<div style="flex:1;text-align:center">'+
   '<h1 style="font-size:26px;font-weight:700;letter-spacing:-0.5px">PharmaCalc</h1>'+
   '<p style="font-size:11px;color:#aaa;margin-top:3px">SQUH Pharmacy Department</p></div>'+
-  '<span style="font-size:10px;font-weight:600;color:#aaa;background:#e8f2f0;padding:3px 9px;border-radius:20px;flex-shrink:0">v1.6</span>'+
+  '<span style="font-size:10px;font-weight:600;color:#aaa;background:#e8f2f0;padding:3px 9px;border-radius:20px;flex-shrink:0">v1.7</span>'+
   '</div></div></div>'+
   '<div class="wrap">'+
   '<div class="card" style="text-align:center;padding:1.25rem 1rem">'+
@@ -2083,7 +2138,7 @@ function modulesHTML(){
   pedTile+
   phHTML+
   '</div>'+
-  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.6</div>'+
+  '<div class="footer">&#169; Saeed Al Rassadi, April 2026 - PharmaCalc v1.7</div>'+
   '</div></div>';
 }
 
@@ -2355,6 +2410,18 @@ function bindEvents(){
         render();
       });})(themeBtns[ti]);
     }
+    /* v1.7: install button */
+    el=document.getElementById('btn-pwa-install');
+    if(el) el.addEventListener('click',function(){
+      if(window.deferredPrompt){
+        window.deferredPrompt.prompt();
+        window.deferredPrompt.userChoice.then(function(choice){
+          trackEvent('PWA','install_'+(choice.outcome||'unknown'),'');
+          window.deferredPrompt=null;
+          render();
+        });
+      }
+    });
   } else if(s==='feedback'){
     el=document.getElementById('btn-back-fb');
     if(el) el.addEventListener('click',function(){state.fbSent=false;state.screen='home';render();});
@@ -2377,7 +2444,7 @@ function bindEvents(){
       var drug=drugEl?drugEl.value:'';
       var typeLabel=state.fbType==='error'?'Drug Error Report':state.fbType==='missing'?'Missing Drug Request':'General Suggestion';
       var drugLine=drug?('Drug: '+drug+'\n'):'';
-      var body=encodeURIComponent('PharmaCalc Feedback\nType: '+typeLabel+'\n'+drugLine+'\n'+msg+'\n\n- Sent from PharmaCalc v1.6');
+      var body=encodeURIComponent('PharmaCalc Feedback\nType: '+typeLabel+'\n'+drugLine+'\n'+msg+'\n\n- Sent from PharmaCalc v1.7');
       var subject=encodeURIComponent('PharmaCalc - '+typeLabel);
       window.location.href='mailto:rassadi222@gmail.com?subject='+subject+'&body='+body;
       trackEvent('Feedback','submit',state.fbType);
@@ -2395,6 +2462,33 @@ function bindEvents(){
 })();
 
 render();
+
+/* === PWA wiring (v1.7) === */
+(function(){
+  /* Service worker registration */
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',function(){
+      navigator.serviceWorker.register('sw.js').then(function(reg){
+        /* console.log('SW registered',reg.scope); */
+      }).catch(function(err){
+        /* console.warn('SW registration failed',err); */
+      });
+    });
+  }
+  /* Capture beforeinstallprompt for the in-app Install button */
+  window.deferredPrompt=null;
+  window.addEventListener('beforeinstallprompt',function(e){
+    e.preventDefault();
+    window.deferredPrompt=e;
+    /* If user is currently on Settings, re-render so the button appears */
+    if(typeof state!=='undefined'&&state.screen==='settings'&&typeof render==='function') render();
+  });
+  window.addEventListener('appinstalled',function(){
+    window.deferredPrompt=null;
+    if(typeof state!=='undefined'&&state.screen==='settings'&&typeof render==='function') render();
+  });
+})();
+
 window.onerror=function(msg,src,line){document.getElementById('app').innerHTML='<div style="padding:2rem;font-family:monospace;font-size:13px;color:#c00"><strong>Error line '+line+':</strong><br>'+msg+'</div>';return true;};
 </script>
 </body>
