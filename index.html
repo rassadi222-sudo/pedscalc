@@ -157,46 +157,56 @@ html.theme-dark .gear-btn:hover{background:rgba(122,184,232,0.12)}
 html.theme-dark .seg{background:#2a2a2a}
 html.theme-dark .seg-btn.active{background:#1c1c1e;color:#90CAF9}
 @media(prefers-color-scheme:dark){
-  body,#app{background:#111;color:#e5e5e5}
-  h1,h2{color:#e5e5e5}
-  .card,.drug-list,.disc-card,.fbstrip,.stat{background:#1c1c1e}
-  .stats{background:#2a2a2a}
-  input,select,textarea{background:#2a2a2a;border-color:#3a3a3a;color:#e5e5e5}
-  input::placeholder,textarea::placeholder{color:#666}
-  .drow{border-color:#2a2a2a;background:#1c1c1e}
-  .drow:hover{background:#252525}
-  .dname{color:#e5e5e5}
-  .metric,.icell,.ftrace{background:#2a2a2a}
-  .info-strip{background:#1a2a3a;color:#ccc}
-  .icell-v,.metric-v{color:#e5e5e5}
-  .search-wrap input{background:#2a2a2a}
-  .cpill{background:#1c1c1e;border-color:#3a3a3a;color:#888}
-  .ref-block{border-color:#2a2a2a}
-  .ref-dose{color:#e5e5e5}
-  .ref-note{color:#666}
-  .ref-k{background:#1a2a3a}
-  .card-label,.stat-l{color:#555}
-  label{color:#666}
-  .disc-card p{color:#aaa}
-  .disc-card h2,.dname{color:#e5e5e5}
-  .disc-icon{background:#1a2a3a}
-  .fbstrip{background:#1c1c1e}
-  .footer{color:#444}
-  .warn{background:#2a2200;border-color:#7a6000;color:#e5c040}
-  .err{background:#2a0000;border-color:#7a2020;color:#f09090}
-  .ftrace{color:#555}
-  .ref-btn{color:#555}
-  .remark{background:#1a2a3a;border-color:#378ADD}
-  .remark-lbl{color:#64B5F6}
-  .remark-text{color:#90CAF9}
-  .rtab{background:#1c1c1e;border-color:#3a3a3a;color:#888}
-  .rtab.active{background:#185FA5;color:#fff;border-color:#185FA5}
-  .fbtb{background:#1c1c1e;border-color:#3a3a3a;color:#888}
-  .fbtb.active{background:#1a2a3a;border-color:#185FA5;color:#90CAF9}
-  .mblue{background:linear-gradient(135deg,#1a2a3a,#0f1e2e)}
-  .mblue .metric-l{color:#64B5F6}
-  .mblue .metric-v{color:#90CAF9}
-  .mblue .metric-u{color:#378ADD}
+  /* Auto dark: only applies when no explicit theme override is active */
+  html:not(.theme-light):not(.theme-dark) body,html:not(.theme-light):not(.theme-dark) #app{background:#0a0a0c;color:#e8e8ea}
+  html:not(.theme-light):not(.theme-dark) h1,html:not(.theme-light):not(.theme-dark) h2{color:#f0f0f2}
+  html:not(.theme-light):not(.theme-dark) .card,html:not(.theme-light):not(.theme-dark) .drug-list,html:not(.theme-light):not(.theme-dark) .disc-card,html:not(.theme-light):not(.theme-dark) .fbstrip,html:not(.theme-light):not(.theme-dark) .stat{background:#1a1a1d;border-color:#2a2a2e}
+  html:not(.theme-light):not(.theme-dark) .stats{background:#2a2a2e}
+  html:not(.theme-light):not(.theme-dark) input,html:not(.theme-light):not(.theme-dark) select,html:not(.theme-light):not(.theme-dark) textarea{background:#262629;border-color:#3a3a3e;color:#f0f0f2}
+  html:not(.theme-light):not(.theme-dark) input::placeholder,html:not(.theme-light):not(.theme-dark) textarea::placeholder{color:#6a6a6e}
+  html:not(.theme-light):not(.theme-dark) .drow{border-color:#2a2a2e;background:#1a1a1d}
+  html:not(.theme-light):not(.theme-dark) .drow:hover,html:not(.theme-light):not(.theme-dark) .drow:focus{background:#262629}
+  html:not(.theme-light):not(.theme-dark) .dname{color:#f0f0f2}
+  html:not(.theme-light):not(.theme-dark) .metric,html:not(.theme-light):not(.theme-dark) .icell,html:not(.theme-light):not(.theme-dark) .ftrace{background:#262629;color:#e8e8ea}
+  html:not(.theme-light):not(.theme-dark) .info-strip{background:#1c2a3a;color:#d8d8da}
+  html:not(.theme-light):not(.theme-dark) .info-lbl{color:#7ab8e8}
+  html:not(.theme-light):not(.theme-dark) .icell-v,html:not(.theme-light):not(.theme-dark) .metric-v{color:#f5f5f7}
+  html:not(.theme-light):not(.theme-dark) .icell-l,html:not(.theme-light):not(.theme-dark) .metric-l{color:#9a9a9e}
+  html:not(.theme-light):not(.theme-dark) .search-wrap input{background:#262629}
+  html:not(.theme-light):not(.theme-dark) .cpill{background:#1a1a1d;border-color:#3a3a3e;color:#9a9a9e}
+  html:not(.theme-light):not(.theme-dark) .ref-block{border-color:#2a2a2e}
+  html:not(.theme-light):not(.theme-dark) .ref-dose{color:#e8e8ea}
+  html:not(.theme-light):not(.theme-dark) .ref-note{color:#9a9a9e}
+  html:not(.theme-light):not(.theme-dark) .ref-k{background:#1c2a3a;color:#7ab8e8}
+  html:not(.theme-light):not(.theme-dark) .ref-btn{color:#7a7a7e}
+  html:not(.theme-light):not(.theme-dark) .card-label{color:#6a6a6e}
+  html:not(.theme-light):not(.theme-dark) .stat-n{color:#7ab8e8}
+  html:not(.theme-light):not(.theme-dark) .stat-l{color:#7a7a7e}
+  html:not(.theme-light):not(.theme-dark) label{color:#9a9a9e}
+  html:not(.theme-light):not(.theme-dark) .disc-card p{color:#bababe}
+  html:not(.theme-light):not(.theme-dark) .disc-card h2{color:#f0f0f2}
+  html:not(.theme-light):not(.theme-dark) .disc-icon{background:#1c2a3a}
+  html:not(.theme-light):not(.theme-dark) .fbstrip{background:#1a1a1d}
+  html:not(.theme-light):not(.theme-dark) .footer{color:#5a5a5e}
+  html:not(.theme-light):not(.theme-dark) .warn{background:#2a2200;border-color:#7a6000;color:#e5c040}
+  html:not(.theme-light):not(.theme-dark) .err{background:#2a0000;border-color:#7a2020;color:#f09090}
+  html:not(.theme-light):not(.theme-dark) .ftrace{color:#9a9a9e}
+  html:not(.theme-light):not(.theme-dark) .remark{background:#1c2a3a;border-color:#5aa9e8}
+  html:not(.theme-light):not(.theme-dark) .remark-lbl{color:#7ab8e8}
+  html:not(.theme-light):not(.theme-dark) .remark-text{color:#cae0f5}
+  html:not(.theme-light):not(.theme-dark) .rtab{background:#1a1a1d;border-color:#3a3a3e;color:#9a9a9e}
+  html:not(.theme-light):not(.theme-dark) .rtab.active{background:#1e5a9a;color:#fff;border-color:#1e5a9a}
+  html:not(.theme-light):not(.theme-dark) .fbtb{background:#1a1a1d;border-color:#3a3a3e;color:#9a9a9e}
+  html:not(.theme-light):not(.theme-dark) .fbtb.active{background:#1c2a3a;border-color:#5aa9e8;color:#7ab8e8}
+  html:not(.theme-light):not(.theme-dark) .mblue{background:linear-gradient(135deg,#1c2a3a,#142030)}
+  html:not(.theme-light):not(.theme-dark) .mblue .metric-l{color:#7ab8e8}
+  html:not(.theme-light):not(.theme-dark) .mblue .metric-v{color:#cae0f5}
+  html:not(.theme-light):not(.theme-dark) .mblue .metric-u{color:#5aa9e8}
+  html:not(.theme-light):not(.theme-dark) .seg{background:#1a1a1d;border:1px solid #2a2a2e}
+  html:not(.theme-light):not(.theme-dark) .seg-btn{color:#9a9a9e}
+  html:not(.theme-light):not(.theme-dark) .seg-btn.active{background:#262629;color:#7ab8e8;box-shadow:0 1px 3px rgba(0,0,0,0.4)}
+  html:not(.theme-light):not(.theme-dark) .gear-btn{color:#7ab8e8}
+  html:not(.theme-light):not(.theme-dark) .gear-btn:hover{background:rgba(122,184,232,0.12)}
 }
 </style>
 </head>
